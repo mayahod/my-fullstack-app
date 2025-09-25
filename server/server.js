@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const rubberDucksRoutes = require('./routes/rubberDucks')
+const recipesRoutes = require('./routes/recipes')
+console.log('===> recipesRoutes:', recipesRoutes);
+
 
 dotenv.config();
 
@@ -25,6 +28,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/rubberDucks', rubberDucksRoutes)
+app.use('/api/recipes', recipesRoutes)
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
