@@ -1,34 +1,42 @@
 import React, { useEffect, useState } from 'react';
 import styles from './Home.module.css';
 import { fetchRecipes } from '../../services/recipes';
+import RecipeCard from '../../components/RecipeCard';
 
 const Home = () => {
   const [recipes, setRecipes] = useState([]);
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true); 
 
   useEffect(() => {
     fetchRecipes()
-      .then(setRecipes)
+      .then((data) => {
+        setRecipes(data);
+        setIsLoading(false);
+      })
       .catch((err) => {
         console.error('API error:', err);
         setError('Failed to load recipes');
+        setIsLoading(false); 
       });
   }, []);
 
   return (
     <div className={styles.home}>
-      <h1 className={styles.headline}>📋 All Recipes</h1>
+      <h1 className={styles.headline}>כל המתכונים</h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      {recipes.length === 0 ? (
-        <p>No recipes found.</p>
+      {isLoading ? (
+        <p>...טוען מתכונים</p> 
+      ) : error ? (
+        <p style={{ color: 'red' }}>{error}</p>
+      ) : recipes.length === 0 ? (
+        <p>לא נמצאו מתכונים</p>
       ) : (
-        <ul>
+        <div className={styles.grid}>
           {recipes.map((recipe) => (
-            <li key={recipe._id}>{recipe.title}</li>
+            <RecipeCard key={recipe._id} recipe={recipe} />
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

@@ -47,6 +47,7 @@ const createRecipe = async (req, res) => {
   }
 };
 
+
 // DELETE /api/recipes/:id 
 const deleteRecipe = async (req, res) => {
   const { id } = req.params;
@@ -63,7 +64,7 @@ const deleteRecipe = async (req, res) => {
 const updateRecipe = async (req, res) => {
   const { id } = req.params;
 
-  const allowed = ['title', 'description', 'category', 'imageUrl'];
+  const allowed = ['title', 'category', 'imageUrl', 'ingredients', 'steps'];
   const update = {};
   for (const key of allowed) if (req.body[key] !== undefined) update[key] = req.body[key];
 
