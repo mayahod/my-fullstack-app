@@ -24,7 +24,20 @@ const Home = () => {
   return (
     <div className={styles.home}>
       <h1 className={styles.headline}>כל המתכונים</h1>
-
+      <SearchBar onSearchChange={handleSearchChange}/>
+      {searchTerm && (
+        <div className={styles.suggestions}>
+          {filteredRecipes.slice(0, 5).map((recipe) => (
+            <Link
+              key={recipe._id}
+              to={`/recipes/${recipe._id}`}   
+              className={styles.suggestionItem}
+            >
+              {recipe.title}
+            </Link>
+          ))}
+        </div>
+      )}
       {isLoading ? (
         <p>...טוען מתכונים</p> 
       ) : error ? (
