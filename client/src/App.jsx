@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import Home from './pages/HomePage/HomePage';
+import HomePage from './pages/HomePage/HomePage';
 import styles from './styles/App.module.css';
 import RecipePage from './pages/RecipePage/RecipePage';
+import SearchResultsPage from './pages/SearchResultsPage/SearchResultsPage';
+
+
 
 
 function App() {
@@ -18,8 +21,9 @@ function App() {
         </header>
         <main className={styles.main}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/recipes/:id" element={<RecipePage />} />
+            <Route path="/search" element={<SearchResultsPage />} />
           </Routes>
         </main>
         {/* <footer className={styles.footer}>

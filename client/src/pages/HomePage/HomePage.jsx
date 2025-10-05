@@ -1,45 +1,71 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import styles from './Home.module.css';
 import { fetchRecipes } from '../../services/recipes';
 import RecipeCard from '../../components/RecipeCard';
+import SearchBar from '../../components/common/SearchBar';
+import { Link } from 'react-router-dom';
 
-const Home = () => {
+const HomePage = () => {
   const [recipes, setRecipes] = useState([]);
   const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchRecipes()
       .then((data) => {
-        setRecipes(data);
-        setIsLoading(false);
+        const list = Array.isArray(data) ? data : (data?.recipes ?? []);
+        setRecipes(list);
       })
       .catch((err) => {
         console.error('API error:', err);
         setError('Failed to load recipes');
-        setIsLoading(false); 
-      });
+      })
+      .finally(() => setIsLoading(false));
   }, []);
+
+  const handleSearchChange = (term) => setSearchTerm(term);
+
+  const filteredRecipes = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return [];
+    return recipes.filter((r) => r.title?.toLowerCase().includes(q));
+  }, [recipes, searchTerm]);
+
+  const showSuggestions =
+    searchTerm.trim().length > 0 && filteredRecipes.length > 0;
 
   return (
     <div className={styles.home}>
       <h1 className={styles.headline}>כל המתכונים</h1>
-      <SearchBar onSearchChange={handleSearchChange}/>
-      {searchTerm && (
-        <div className={styles.suggestions}>
-          {filteredRecipes.slice(0, 5).map((recipe) => (
-            <Link
-              key={recipe._id}
-              to={`/recipes/${recipe._id}`}   
-              className={styles.suggestionItem}
-            >
-              {recipe.title}
-            </Link>
-          ))}
-        </div>
-      )}
+
+      <div className={styles.searchWrapper}>
+        <SearchBar onSearchChange={handleSearchChange} />
+
+        {showSuggestions && (
+          <ul className={styles.suggestions} role="listbox">
+            {filteredRecipes.slice(0, 5).map((recipe) => (
+              <li key={recipe._id}>
+                <Link
+                  to={`/recipes/${recipe._id}`}
+                  className={styles.suggestionItem}
+                >
+                  {recipe.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {searchTerm.trim() && filteredRecipes.length === 0 && (
+          <div className={styles.suggestions}>
+            <div className={styles.noResultsRow}>לא נמצאו תוצאות</div>
+          </div>
+        )}
+      </div>
+
       {isLoading ? (
-        <p>...טוען מתכונים</p> 
+        <p>...טוען מתכונים</p>
       ) : error ? (
         <p style={{ color: 'red' }}>{error}</p>
       ) : recipes.length === 0 ? (
@@ -55,4 +81,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default HomePage;

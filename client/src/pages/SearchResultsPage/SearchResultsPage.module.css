@@ -1,0 +1,23 @@
+.resultsPage {
+  text-align: center;
+  padding: 20px;
+  background-color: #ffe6ef;
+  min-height: 100vh;
+}
+
+.title {
+  font-size: 2em;
+  margin-bottom: 20px;
+  color: #53474F;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.noResults {
+  font-size: 18px;
+  color: #666;
+}
