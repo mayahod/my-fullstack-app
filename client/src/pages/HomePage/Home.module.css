@@ -6,7 +6,7 @@
 
 .headline {
   font-size: 2rem;
-  color: #53474F;
+  color: #53474f;
   margin-bottom: 40px;
 }
 
@@ -51,14 +51,13 @@
   -webkit-box-orient: vertical;
 }
 
-
 .searchWrapper {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;  
+  align-items: center;
   gap: 10px;
-  margin-bottom: 32px;  
+  margin-bottom: 32px;
 }
 
 .searchContainer {
@@ -69,7 +68,7 @@
   background-color: #fff;
   border-radius: 40px;
   padding: 10px 15px;
-  width: min(90vw, 420px);   
+  width: min(90vw, 420px);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -83,22 +82,30 @@
   direction: rtl;
 }
 
-.iconSearch { color: #ff80aa; font-size: 1.2rem; cursor: pointer; }
-.iconClear  { color: #555;    font-size: 1.2rem; cursor: pointer; }
+.iconSearch {
+  color: #ff80aa;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.iconClear {
+  color: #555;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
 
 .suggestions {
   position: absolute;
-  top: calc(100% + 8px);  
+  top: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%);  
-  width: min(90vw, 420px);      
+  transform: translateX(-50%);
+  width: min(90vw, 420px);
   background-color: #fde7ef;
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 10;
   padding: 8px 0;
   margin: 0;
-  list-style: none;  
+  list-style: none;
 }
 
 .suggestionItem {
@@ -119,4 +126,89 @@
   padding: 12px 14px;
   text-align: right;
   color: #7a6d73;
+}
+
+.sortSection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sortLabel {
+  font-size: 1rem;
+  color: #53474f;
+}
+
+.sortSelect {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  background-color: #fff;
+  color: #53474f;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sortSelect:hover {
+  border-color: #ff80aa;
+}
+
+.topBar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 40px;
+  margin-top: -10px;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.sortButton,
+.filterButton {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 8px;
+  background-color: #fff;
+  border: 1.5px solid #ff80aa;
+  border-radius: 24px;
+  padding: 6px 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition:
+    background-color 0.2s,
+    transform 0.2s;
+  min-width: 160px;
+  height: 30px;
+  max-width: 160px;
+  white-space: nowrap;
+}
+
+.sortButton:hover,
+.filterButton:hover {
+  background-color: #ffeaf2;
+  transform: scale(1.03);
+}
+
+.sortLabel,
+.filterLabel {
+  font-size: 0.95rem;
+  color: #53474f;
+}
+
+.sortSelect,
+.filterSelect {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: #53474f;
+  cursor: pointer;
+  direction: rtl;
+}
+
+.grid {
+  direction: rtl;
 }
