@@ -1,7 +1,7 @@
 // server/controllers/recipesController.js
 const Recipe = require('../models/Recipe');
 
-// GET /api/recipes  
+// GET /api/recipes
 const getAllRecipes = async (req, res) => {
   try {
     const recipes = await Recipe.find();
@@ -24,7 +24,7 @@ const getRandomRecipe = async (req, res) => {
   }
 };
 
-// GET /api/recipes/:id 
+// GET /api/recipes/:id
 const getSingleRecipe = async (req, res) => {
   const { id } = req.params;
   try {
@@ -36,19 +36,52 @@ const getSingleRecipe = async (req, res) => {
   }
 };
 
-// POST /api/recipes 
+// // POST /api/recipes
+// const createRecipe = async (req, res) => {
+//   const { title, description, category, imageUrl } = req.body;
+//   try {
+//     const recipe = await Recipe.create({ title, description, category, imageUrl });
+//     res.status(201).json({ recipe });
+//   } catch (err) {
+//     res.status(400).json({ mssg: 'Error creating recipe', err });
+//   }
+// };
+
+// POST /api/recipes
 const createRecipe = async (req, res) => {
-  const { title, description, category, imageUrl } = req.body;
+  let { title, ingredients, steps, category, imageUrl } = req.body;
+
   try {
-    const recipe = await Recipe.create({ title, description, category, imageUrl });
+    if (typeof ingredients === 'string') {
+      ingredients = ingredients
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+    }
+
+    if (typeof steps === 'string') {
+      steps = steps
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+    }
+
+    const recipe = await Recipe.create({
+      title,
+      ingredients,
+      steps,
+      category,
+      imageUrl,
+    });
+
     res.status(201).json({ recipe });
   } catch (err) {
+    console.error('Error creating recipe:', err.message);
     res.status(400).json({ mssg: 'Error creating recipe', err });
   }
 };
 
-
-// DELETE /api/recipes/:id 
+// DELETE /api/recipes/:id
 const deleteRecipe = async (req, res) => {
   const { id } = req.params;
   try {
@@ -60,7 +93,7 @@ const deleteRecipe = async (req, res) => {
   }
 };
 
-// PATCH /api/recipes/:id 
+// PATCH /api/recipes/:id
 const updateRecipe = async (req, res) => {
   const { id } = req.params;
 

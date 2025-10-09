@@ -27,9 +27,10 @@ const SearchBar = ({ onSearchChange }) => {
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && handleSearchClick()}
       />
+
       <input
         type="text"
-        placeholder="...חפש מתכון"
+        placeholder="  חפש מתכון..."
         className={styles.searchInput}
         value={searchTerm}
         onChange={(e) => {
@@ -37,6 +38,7 @@ const SearchBar = ({ onSearchChange }) => {
           onSearchChange(e.target.value);
         }}
       />
+
       <FaTimes className={styles.iconClear} onClick={handleClear} />
     </div>
   );

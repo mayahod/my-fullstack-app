@@ -58,42 +58,48 @@ const HomePage = () => {
 
   return (
     <div className={styles.home}>
-      <div className={styles.topBar}>
-        <div className={styles.filterButton}>
-          <label htmlFor="filter" className={styles.filterLabel}>
-            :סינון לפי
-          </label>
-          <select
-            id="filter"
-            value={filterOption}
-            onChange={(e) => setFilterOption(e.target.value)}
-            className={styles.filterSelect}
-          >
-            <option value="all">הכול</option>
-            <option value="פסטה">פסטה</option>
-            <option value="מרק">מרק</option>
-            <option value="סלט">סלט</option>
-            <option value="לחם">לחם</option>
-            <option value="קינוח">קינוח</option>
-          </select>
-        </div>
+      <div className={styles.topBarContainer}>
+        <Link to="/add" className={styles.addButton}>
+          הוסף מתכון חדש
+        </Link>
 
-        <div className={styles.sortButton}>
-          <label htmlFor="sort" className={styles.sortLabel}>
-            :מיון לפי
-          </label>
-          <select
-            id="sort"
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className={styles.sortSelect}
-          >
-            <option value="default">ללא</option>
-            <option value="name">שם (א-ת)</option>
-            <option value="nameDesc">שם (ת-א)</option>
-            <option value="newest">הכי חדשים</option>
-            <option value="oldest">הכי ישנים</option>
-          </select>
+        <div className={styles.topBar}>
+          <div className={styles.filterButton}>
+            <label htmlFor="filter" className={styles.filterLabel}>
+              :סינון לפי
+            </label>
+            <select
+              id="filter"
+              value={filterOption}
+              onChange={(e) => setFilterOption(e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="all">הכול</option>
+              <option value="פסטה">פסטה</option>
+              <option value="מרק">מרק</option>
+              <option value="סלט">סלט</option>
+              <option value="לחם">לחם</option>
+              <option value="קינוח">קינוח</option>
+            </select>
+          </div>
+
+          <div className={styles.sortButton}>
+            <label htmlFor="sort" className={styles.sortLabel}>
+              :מיון לפי
+            </label>
+            <select
+              id="sort"
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className={styles.sortSelect}
+            >
+              <option value="default">ללא</option>
+              <option value="name">שם (א-ת)</option>
+              <option value="nameDesc">שם (ת-א)</option>
+              <option value="newest">החדשים ביותר</option>
+              <option value="oldest">הישנים ביותר</option>
+            </select>
+          </div>
         </div>
       </div>
       <h1 className={styles.headline}>כל המתכונים</h1>
