@@ -4,6 +4,9 @@ img { max-width: 100%; }
 input, textarea, select { min-width: 0; }
 button, a { touch-action: manipulation; }
 body {
+ background: #fcf8f9;
+ color: #453a40;
+ line-height: 1.6;
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -14,3 +17,7 @@ body {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
   }
 
+
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid #a43c64; outline-offset: 3px; }

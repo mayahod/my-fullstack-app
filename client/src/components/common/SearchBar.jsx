@@ -24,6 +24,7 @@ const SearchBar = ({ onSearchChange }) => {
         className={styles.iconSearch}
         onClick={handleSearchClick}
         role="button"
+        aria-label="חיפוש מתכון"
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && handleSearchClick()}
       />
@@ -33,13 +34,14 @@ const SearchBar = ({ onSearchChange }) => {
         placeholder="  חפש מתכון..."
         className={styles.searchInput}
         value={searchTerm}
+        onKeyDown={(event) => { if (event.key === 'Enter') handleSearchClick(); }}
         onChange={(e) => {
           setSearchTerm(e.target.value);
           onSearchChange(e.target.value);
         }}
       />
 
-      <FaTimes className={styles.iconClear} onClick={handleClear} />
+      {searchTerm && <FaTimes className={styles.iconClear} onClick={handleClear} role="button" aria-label="ניקוי החיפוש" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') handleClear(); }} />}
     </div>
   );
 };

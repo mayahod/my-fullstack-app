@@ -1,4 +1,10 @@
-import { API_BASE as BASE_URL } from './config';
+import { API_BASE as BASE_URL } from './config.js';
+
+let recipeCache = null;
+let cachedAt = 0;
+let pendingRecipes = null;
+const invalidateRecipes = () => { recipeCache = null; cachedAt = 0; };
+export const getCachedRecipe = (id) => recipeCache?.find((recipe) => recipe._id === id) || null;
 
 async function myRecipeRequest(path, token, options = {}) {
   const response = await fetch(`${BASE_URL}/api/recipes${path}`, {
@@ -11,6 +17,7 @@ async function myRecipeRequest(path, token, options = {}) {
     error.status = response.status;
     throw error;
   }
+  if (options.method) invalidateRecipes();
   return data;
 }
 
@@ -19,15 +26,18 @@ export const updateMyRecipe = (id, recipe, token) => myRecipeRequest(`/${id}`, t
 export const deleteMyRecipe = (id, token) => myRecipeRequest(`/${id}`, token, { method: 'DELETE' });
 
 export async function fetchRecipes() {
-  try {
-    const response = await fetch(`${BASE_URL}/api/recipes`);
+  if (recipeCache && Date.now() - cachedAt < 30000) return recipeCache;
+  if (pendingRecipes) return pendingRecipes;
+  pendingRecipes = (async () => {
+    const response = await fetch(`${BASE_URL}/api/recipes`, { signal: AbortSignal.timeout(90000) });
+    if (!response.ok) throw new Error('לא ניתן לטעון את המתכונים כרגע. נסו שוב.');
     const data = await response.json();
-    console.log('API response:', data);
-    return Array.isArray(data) ? data : data.recipes || [];
-  } catch (error) {
-    console.error('Error fetching recipes:', error);
-    return [];
-  }
+    recipeCache = Array.isArray(data) ? data : data.recipes || [];
+    cachedAt = Date.now();
+    return recipeCache;
+  })();
+  try { return await pendingRecipes; }
+  finally { pendingRecipes = null; }
 }
 
 export async function searchRecipes(query) {
@@ -53,7 +63,9 @@ export const addRecipe = async (recipeData, token) => {
       throw new Error('שגיאה בעת הוספת המתכון');
     }
 
-    return await response.json();
+    const data = await response.json();
+    invalidateRecipes();
+    return data;
   } catch (error) {
     console.error('Add recipe error:', error);
     throw error;

@@ -12,19 +12,27 @@ const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('default');
   const [filterOption, setFilterOption] = useState('all');
+  const [attempt, setAttempt] = useState(0);
+  const [slow, setSlow] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    setIsLoading(true);
+    setError(null);
+    setSlow(false);
+    const timer = setTimeout(() => { if (active) setSlow(true); }, 8000);
     fetchRecipes()
       .then((data) => {
+        if (!active) return;
         const list = Array.isArray(data) ? data : (data?.recipes ?? []);
         setRecipes(list);
       })
       .catch((err) => {
-        console.error('API error:', err);
-        setError('Failed to load recipes');
+        if (active) setError('לא ניתן לטעון את המתכונים כרגע. בדקו את החיבור ונסו שוב.');
       })
-      .finally(() => setIsLoading(false));
-  }, []);
+      .finally(() => { clearTimeout(timer); if (active) setIsLoading(false); });
+    return () => { active = false; clearTimeout(timer); };
+  }, [attempt]);
 
   const handleSearchChange = (term) => setSearchTerm(term);
 
@@ -58,6 +66,11 @@ const HomePage = () => {
 
   return (
     <div className={styles.home}>
+      <div className={styles.intro}>
+        <p className={styles.eyebrow}>מה מבשלים היום?</p>
+        <h1 className={styles.headline}>מתכונים שכיף לחזור אליהם</h1>
+        <p>כל הטעמים האהובים במקום אחד. מגלים, מבשלים ומשתפים.</p>
+      </div>
       <div className={styles.topBarContainer}>
         <Link to="/add" className={styles.addButton}>
           הוסף מתכון חדש
@@ -102,7 +115,6 @@ const HomePage = () => {
           </div>
         </div>
       </div>
-      <h1 className={styles.headline}>כל המתכונים</h1>
       <div className={styles.searchWrapper}>
         <SearchBar onSearchChange={handleSearchChange} />
 
@@ -126,11 +138,11 @@ const HomePage = () => {
       </div>
 
       {isLoading ? (
-        <p>...טוען מתכונים</p>
+        <div className={styles.status} role="status"><p>טוען מתכונים…</p>{slow && <p>הטעינה מתארכת מעט. עוד רגע המתכונים כאן.</p>}</div>
       ) : error ? (
-        <p style={{ color: 'red' }}>{error}</p>
-      ) : recipes.length === 0 ? (
-        <p>לא נמצאו מתכונים</p>
+        <div className={styles.status} role="alert"><p>{error}</p><button onClick={() => setAttempt((value) => value + 1)}>נסו שוב</button></div>
+      ) : filteredRecipes.length === 0 ? (
+        <p className={styles.status}>לא נמצאו מתכונים בסינון שבחרת</p>
       ) : (
         <div className={styles.grid}>
           {filteredRecipes.map((recipe) => (

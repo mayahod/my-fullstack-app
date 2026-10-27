@@ -1,83 +1,13 @@
-/* App.module.css */
-.app {
-  text-align: center;
-}
-/*
-.appHeader {
-  background-color: #53474F;
-  padding: 5px 30px 5px 30px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-} */
-
-.appHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 22px;
-  background: #4f464d;
-  direction: ltr;
-}
-
-.appLogo {
-  height: 100px;
-}
-
-.appNav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  flex-direction: row-reverse;
-  align-items: center;
-}
-
-/* .appLink {
-  color: white;
-  text-decoration: none;
-  font-size: 1.2em;
-} */
-
-.appLink {
-  color: #fff;
-  text-decoration: none;
-  font-weight: 700;
-  padding: 6px 8px;
-}
-
-.appLink:hover {
-  text-decoration: underline;
-}
-
-.main {
-  padding: 20px;
-  background-color: #ffdce8;
-  min-height: calc(100vh - 80px);
-}
-
-.footer {
-  padding: 10px;
-  background-color: #53474f;
-  color: white;
-  position: fixed;
-  width: 100%;
-  bottom: 0;
-  text-align: center;
-}
-
-body {
-  background-color: #ffdce8;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-}
-
-.appButtonLink {
-  background: none;
-  border: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  padding: 6px 8px;
+.app { text-align: center; color: #453a40; }
+.appHeader { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 18px max(24px, calc((100vw - 1160px) / 2)); background: #fff; border-bottom: 1px solid #ecdfe4; direction: rtl; }
+.brand { color: #803957; text-decoration: none; font-size: 1.2rem; font-weight: 800; white-space: nowrap; }
+.appNav { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.appLink { color: #59434e; text-decoration: none; font: inherit; font-weight: 600; padding: 8px 10px; border-radius: 8px; }
+.appLink:hover { background: #f9edf2; }
+.main { padding: 28px 24px 60px; min-height: calc(100dvh - 80px); }
+@media (max-width: 600px) {
+ .appHeader { padding: 16px; flex-direction: column; gap: 8px; }
+ .appNav { justify-content: center; gap: 4px; }
+ .appLink { font-size: .95rem; }
+ .main { padding: 20px 16px 40px; }
 }

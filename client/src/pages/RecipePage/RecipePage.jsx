@@ -2,29 +2,33 @@ import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import styles from "./RecipePage.module.css";  
 import { API_BASE } from '../../services/config';
+import { getCachedRecipe } from '../../services/recipes';
 function RecipePage () {
     const { id } = useParams();
-    const [recipe, setRecipe] = useState(null);
+    const [recipe, setRecipe] = useState(() => getCachedRecipe(id));
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetch(`${API_BASE}/api/recipes/${id}`)
-            .then((res) => res.json())
+        const controller = new AbortController();
+        setRecipe(getCachedRecipe(id));
+        setError(null);
+        fetch(`${API_BASE}/api/recipes/${id}`, { signal: controller.signal })
+            .then((res) => { if (!res.ok) throw new Error('Recipe unavailable'); return res.json(); })
             .then((data) => {
                 setRecipe(data.recipe); 
             })
             .catch((err) => {
-                setError("couldn't load recipe");
-                console.error(err);
+                if (err.name !== 'AbortError') setError('לא ניתן לטעון את המתכון כרגע. נסו לרענן את העמוד.');
             });
+        return () => controller.abort();
     }, [id]);
 
     return (
         <div className={styles.container}>
             {error && <p style={{ color: "red" }}>{error}</p>}
-            {!recipe ? (
+            {!recipe && !error ? (
                 <p>...טוען מתכון</p>
-            ) : (
+            ) : recipe ? (
                 <div>
                     <h1 className={styles.title}>{recipe.title}</h1>
 
@@ -48,7 +52,7 @@ function RecipePage () {
                         className={styles.image}
                     />
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }
