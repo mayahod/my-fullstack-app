@@ -4,7 +4,7 @@ img { max-width: 100%; }
 input, textarea, select { min-width: 0; }
 button, a { touch-action: manipulation; }
 body {
- background: #fcf8f9;
+ background: #fff0f5;
  color: #453a40;
  line-height: 1.6;
     margin: 0;

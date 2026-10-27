@@ -73,7 +73,6 @@ function AppHeader() {
 
   return (
     <header className={styles.appHeader}>
-      <Link to="/" className={styles.brand}>ספר המתכונים שלנו</Link>
       <nav className={styles.appNav}>
         <Link to="/" className={styles.appLink}>
           בית

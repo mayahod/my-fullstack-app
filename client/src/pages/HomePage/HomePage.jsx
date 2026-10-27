@@ -69,7 +69,6 @@ const HomePage = () => {
       <div className={styles.intro}>
         <p className={styles.eyebrow}>מה מבשלים היום?</p>
         <h1 className={styles.headline}>מתכונים שכיף לחזור אליהם</h1>
-        <p>כל הטעמים האהובים במקום אחד. מגלים, מבשלים ומשתפים.</p>
       </div>
       <div className={styles.topBarContainer}>
         <Link to="/add" className={styles.addButton}>
