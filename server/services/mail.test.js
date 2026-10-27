@@ -32,6 +32,37 @@ test('Resend integration submits the right message and surfaces provider errors'
   }
 });
 
+test('Brevo accepts a verified email sender and validates provider acceptance', async () => {
+  const keys = ['BREVO_API_KEY', 'RESEND_API_KEY', 'MAIL_FROM', 'APP_URL'];
+  const old = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  const originalFetch = globalThis.fetch;
+  try {
+    process.env.BREVO_API_KEY = 'brevo-test-key';
+    delete process.env.RESEND_API_KEY;
+    process.env.MAIL_FROM = 'Recipes <sender@example.test>';
+    process.env.APP_URL = 'https://recipes.example.test';
+    assert.equal(mailConfigured(), true);
+    globalThis.fetch = async (url, options) => {
+      assert.equal(url, 'https://api.brevo.com/v3/smtp/email');
+      assert.equal(options.headers['api-key'], 'brevo-test-key');
+      const data = JSON.parse(options.body);
+      assert.deepEqual(data.sender, { name: 'Recipes', email: 'sender@example.test' });
+      assert.deepEqual(data.to, [{ email: 'recipient@example.test' }]);
+      assert.ok(data.textContent.includes('/reset-password#token=abc'));
+      assert.ok(data.htmlContent.includes('https://recipes.example.test/reset-password#token=abc'));
+      return { ok: true, json: async () => ({ messageId: 'test-id' }) };
+    };
+    await sendPasswordResetEmail({ to: 'recipient@example.test', resetUrl: `${publicAppUrl()}/reset-password#token=abc` });
+    globalThis.fetch = async () => ({ ok: true, json: async () => ({}) });
+    await assert.rejects(sendPasswordResetEmail({ to: 'recipient@example.test', resetUrl: 'https://recipes.example.test' }), /acceptance/);
+    globalThis.fetch = async () => ({ ok: false, status: 401 });
+    await assert.rejects(sendPasswordResetEmail({ to: 'recipient@example.test', resetUrl: 'https://recipes.example.test' }), /rejected/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const key of keys) { if (old[key] === undefined) delete process.env[key]; else process.env[key] = old[key]; }
+  }
+});
+
 test('rate limits stop repeated requests and return a retry time', () => {
   const middleware = rateLimit({ limit: 2 });
   let passed = 0, status, retry;
