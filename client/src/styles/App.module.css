@@ -2,14 +2,23 @@
 .app {
   text-align: center;
 }
-
+/*
 .appHeader {
   background-color: #53474F;
   padding: 5px 30px 5px 30px;
   color: white;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+} */
+
+.appHeader {
+  display: flex;
   justify-content: space-between;
+  align-items: center;
+  padding: 14px 22px;
+  background: #4f464d;
+  direction: ltr;
 }
 
 .appLogo {
@@ -18,13 +27,23 @@
 
 .appNav {
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
+  flex-direction: row-reverse;
+  align-items: center;
 }
 
-.appLink {
+/* .appLink {
   color: white;
   text-decoration: none;
   font-size: 1.2em;
+} */
+
+.appLink {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  padding: 6px 8px;
 }
 
 .appLink:hover {
@@ -33,24 +52,32 @@
 
 .main {
   padding: 20px;
-  background-color: #FFDCE8;
-  height: 100vh;
+  background-color: #ffdce8;
+  min-height: calc(100vh - 80px);
 }
 
 .footer {
   padding: 10px;
-  background-color: #53474F;
+  background-color: #53474f;
   color: white;
   position: fixed;
   width: 100%;
   bottom: 0;
   text-align: center;
 }
-  
 
 body {
-  background-color: #FFDCE8;
+  background-color: #ffdce8;
   margin: 0;
   padding: 0;
   min-height: 100vh;
+}
+
+.appButtonLink {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 6px 8px;
 }

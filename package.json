@@ -1,0 +1,13 @@
+{
+  "type": "module",
+  "name": "server",
+  "scripts": {
+    "build": "npm ci --prefix server && npm ci --prefix client --include=dev && npm run build --prefix client",
+    "start": "node server/server.js"
+  },
+  "engines": { "node": ">=22 <23" },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

@@ -1,0 +1,144 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(83, 71, 79, 0.25);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+  animation: fadeIn 120ms ease-out;
+}
+
+.card {
+  width: min(960px, 92vw);
+  background: #ffe6ef;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  border: 4px solid #f6cdda;
+  overflow: hidden;
+}
+
+.headerRow {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  background: #f9d8e6;
+  border-bottom: 3px solid #f3c3d8;
+}
+
+.logoPill,
+.uploadPill {
+  background: #ffd0e1;
+  color: #53474f;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.closeBtn {
+  position: absolute;
+  right: 50%;
+  transform: translateX(50%);
+  top: 12px;
+  border: none;
+  background: #ff8fb5;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  line-height: 30px;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.closeBtn:hover {
+  background: #ff75a7;
+}
+
+.contentBox {
+  padding: clamp(28px, 5vw, 48px);
+  background: linear-gradient(#ffe6ef, #ffd9e8);
+  border-radius: 16px;
+  margin: 18px;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  color: #e15d98;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.subtitle {
+  margin: 6px 0 28px;
+  color: #e15d98;
+  font-size: clamp(20px, 3vw, 32px);
+  font-weight: 700;
+}
+
+.circleWrap {
+  position: relative;
+  width: min(260px, 60vw);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 6px solid #86efac; /* ירקרק בהיר */
+  display: grid;
+  place-items: center;
+  box-shadow: 0 14px 40px rgba(22, 163, 74, 0.2);
+}
+
+.checkSvg {
+  width: 62%;
+  height: auto;
+  color: #16a34a; /* ירוק */
+  filter: drop-shadow(0 8px 16px rgba(22, 163, 74, 0.25));
+  animation: popIn 260ms ease-out;
+}
+
+.closeInCircle {
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: #444;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.closeInCircle:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes popIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
