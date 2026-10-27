@@ -283,3 +283,5 @@
  .sortSelect, .filterSelect { width: 100%; max-width: 100%; min-height: 28px; }
  .grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 18px; }
 }
+
+.sortLabel, .filterLabel { direction: rtl; unicode-bidi: isolate; }

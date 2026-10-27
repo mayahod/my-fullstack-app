@@ -213,3 +213,5 @@
   .modalCard { width: min(560px, 94vw); padding: 32px 18px 22px; max-height: 90vh; overflow-y: auto; }
   .popup { width: calc(100% - 24px); padding: 14px; }
 }
+
+.form label, .linkBtn { direction: rtl; unicode-bidi: isolate; }

@@ -97,10 +97,10 @@ const Login = () => {
 
       <h1>התחברות</h1>
       <form className={styles.form} onSubmit={handleSubmit}>
-        <label>:אימייל</label>
+        <label>אימייל:</label>
         <input aria-label="אימייל" autoComplete="username" type="email" name="email" value={formData.email} onChange={handleChange} required />
 
-        <label>:סיסמה</label>
+        <label>סיסמה:</label>
         <input
           type="password"
           aria-label="סיסמה"
@@ -121,7 +121,7 @@ const Login = () => {
               setResetType('');
             }}
           >
-            ?שכחת סיסמה
+            שכחת סיסמה?
           </button>
         </div>
 

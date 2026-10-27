@@ -78,7 +78,7 @@ const HomePage = () => {
         <div className={styles.topBar}>
           <div className={styles.filterButton}>
             <label htmlFor="filter" className={styles.filterLabel}>
-              :סינון לפי
+              סינון לפי:
             </label>
             <select
               id="filter"
@@ -97,7 +97,7 @@ const HomePage = () => {
 
           <div className={styles.sortButton}>
             <label htmlFor="sort" className={styles.sortLabel}>
-              :מיון לפי
+              מיון לפי:
             </label>
             <select
               id="sort"

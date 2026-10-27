@@ -32,14 +32,14 @@ function RecipePage () {
                 <div>
                     <h1 className={styles.title}>{recipe.title}</h1>
 
-                    <h3 className={styles.subtitle}>:מצרכים</h3>
+                    <h3 className={styles.subtitle}>מצרכים:</h3>
                     <ul className={styles.ingredientsList}>
                         {recipe.ingredients && recipe.ingredients.map((item, index) => (
                             <li key={index}>{item}</li>
                         ))}
                     </ul>
 
-                    <h3 className={styles.subtitle}>:אופן ההכנה</h3>
+                    <h3 className={styles.subtitle}>אופן ההכנה:</h3>
                     <ol className={styles.stepsList}>
                         {recipe.steps && recipe.steps.map((step, index) => (
                             <li key={index}>{step}</li>
