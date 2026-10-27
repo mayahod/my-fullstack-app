@@ -15,6 +15,7 @@ const AddRecipe = () => {
     steps: '',
     category: '',
     imageUrl: '',
+    isPublic: false,
   });
 
   const [message, setMessage] = useState(null);
@@ -23,7 +24,7 @@ const AddRecipe = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
     });
   };
 
@@ -71,10 +72,10 @@ const AddRecipe = () => {
       )}
       <h1>הוספת מתכון חדש</h1>
       <form className={styles.form} onSubmit={handleSubmit}>
-        <label>:שם המתכון</label>
+        <label>שם המתכון:</label>
         <input type="text" name="title" value={formData.title} onChange={handleChange} required />
 
-        <label>:מצרכים</label>
+        <label>מצרכים:</label>
         <textarea
           name="ingredients"
           value={formData.ingredients}
@@ -83,11 +84,11 @@ const AddRecipe = () => {
         />
         <small className={styles.hint}>.Enter בעת הוספת מצרכים, יש להקיש בין כל מצרך</small>
 
-        <label>:אופן ההכנה</label>
+        <label>אופן ההכנה:</label>
         <textarea name="steps" value={formData.steps} onChange={handleChange} required />
         <small className={styles.hint}>.Enter בעת הוספת שלבי ההכנה, יש להקיש בין כל שלב</small>
 
-        <label>:קטגוריה</label>
+        <label>קטגוריה:</label>
         <select name="category" value={formData.category} onChange={handleChange} required>
           <option value="">בחר קטגוריה</option>
           <option value="פסטה">פסטה</option>
@@ -97,14 +98,19 @@ const AddRecipe = () => {
           <option value="קינוח">קינוח</option>
         </select>
 
-        <label>:קישור לתמונת המתכון</label>
-        <input
-          type="text"
-          name="imageUrl"
-          value={formData.imageUrl}
-          onChange={handleChange}
-          required
-        />
+        <label>קישור לתמונת המתכון (לא חובה):</label>
+        <input type="text" name="imageUrl" value={formData.imageUrl} onChange={handleChange} />
+
+        <label className={styles.visibility}>
+          <input
+            type="checkbox"
+            name="isPublic"
+            checked={formData.isPublic}
+            onChange={handleChange}
+          />
+          לפרסם את המתכון לכולם
+        </label>
+        <small className={styles.hint}>ללא סימון, רק לך תהיה גישה למתכון דרך האזור האישי.</small>
 
         <button type="submit" disabled={saving}>
           {saving ? 'שומרים…' : 'הוסף מתכון'}

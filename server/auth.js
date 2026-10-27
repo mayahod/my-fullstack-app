@@ -37,3 +37,9 @@ export async function requireAuth(req, res, next) {
     return res.status(500).json({ message: 'שגיאה בשרת' });
   }
 }
+
+// Public recipe reads accept an optional session, but never trust an unverified token.
+export function optionalAuth(req, res, next) {
+  if (!req.headers.authorization) return next();
+  return requireAuth(req, res, next);
+}

@@ -14,7 +14,7 @@ All routes start with `/api`. Requests with a body use JSON. Protected routes re
 | PATCH  | `/recipes/:id`    | Owner          | `{ recipe: {...} }`                |
 | DELETE | `/recipes/:id`    | Owner          | `{ recipe: {...} }`                |
 
-Recipe fields: `title`, `category`, `imageUrl`, `ingredients`, `steps`. Ingredients and steps accept arrays of strings or newline-separated text. Ownership comes from the session, never the request body. Edit payloads are restricted to those five fields. A missing or foreign-owned recipe returns `404` when editing or deleting.
+Recipe fields: `title`, `category`, optional `imageUrl`, `ingredients`, `steps`, boolean `isPublic`. New recipes default to `isPublic: false`. Only the owner can read private recipes or change visibility. Legacy documents without `isPublic` remain public. Public list and random endpoints exclude private recipes. Ingredients and steps accept arrays of strings or newline-separated text. Ownership comes from the session, never the request body. Edit payloads are restricted to those six fields. A missing or foreign-owned recipe returns `404` when editing or deleting.
 
 ## Accounts
 

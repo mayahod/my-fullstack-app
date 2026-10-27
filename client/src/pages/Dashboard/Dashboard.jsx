@@ -41,13 +41,18 @@ function Dashboard() {
     setForm({
       title: recipe.title,
       category: recipe.category,
-      imageUrl: recipe.imageUrl,
+      imageUrl: recipe.imageUrl || '',
+      isPublic: recipe.isPublic !== false,
       ingredients: recipe.ingredients.join('\n'),
       steps: recipe.steps.join('\n'),
     });
   };
   const change = (event) =>
-    setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+    setForm((current) => ({
+      ...current,
+      [event.target.name]:
+        event.target.type === 'checkbox' ? event.target.checked : event.target.value,
+    }));
   const save = async (event) => {
     event.preventDefault();
     if (busy) return;
@@ -121,10 +126,12 @@ function Dashboard() {
           {recipes.map((recipe) => (
             <article className={styles.card} key={recipe._id}>
               <Link to={`/recipes/${recipe._id}`}>
-                <img src={recipe.imageUrl} alt={recipe.title} />
+                {recipe.imageUrl && <img src={recipe.imageUrl} alt={recipe.title} loading="lazy" />}
                 <h2>{recipe.title}</h2>
               </Link>
-              <p>{recipe.category}</p>
+              <p>
+                {recipe.category} · {recipe.isPublic ? 'ציבורי' : 'פרטי — רק שלך'}
+              </p>
               <div className={styles.actions}>
                 <button onClick={() => edit(recipe)}>עריכה</button>
                 <button
@@ -180,9 +187,14 @@ function Dashboard() {
                 <textarea name="steps" rows={5} value={form.steps} onChange={change} required />
               </label>
               <label>
-                קישור לתמונה
-                <input name="imageUrl" value={form.imageUrl} onChange={change} required />
+                קישור לתמונה (לא חובה)
+                <input name="imageUrl" value={form.imageUrl} onChange={change} />
               </label>
+              <label className={styles.visibility}>
+                <input type="checkbox" name="isPublic" checked={form.isPublic} onChange={change} />
+                לפרסם את המתכון לכולם
+              </label>
+              <small>ללא סימון, רק לך תהיה גישה למתכון דרך האזור האישי.</small>
               {error && (
                 <p role="alert" className={styles.error}>
                   {error}

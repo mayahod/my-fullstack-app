@@ -153,3 +153,16 @@
     padding: 18px;
   }
 }
+
+.form .visibility {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: right;
+}
+.form .visibility input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: #a43c64;
+}

@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '../auth.js';
+import { requireAuth, optionalAuth } from '../auth.js';
 import {
   createRecipe,
   getAllRecipes,
@@ -11,6 +11,11 @@ import {
 } from '../controllers/recipeController.js';
 
 const router = express.Router();
+// A recipe can become private at any time; do not cache authenticated content.
+router.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 
 /**
  * Read Only Permission Routes
@@ -23,7 +28,7 @@ router.get('/random', getRandomRecipe);
 router.get('/mine', requireAuth, getMyRecipes);
 
 // GET a single recipe
-router.get('/:id', getSingleRecipe);
+router.get('/:id', optionalAuth, getSingleRecipe);
 
 /**
  * Read and Write Permission Routes

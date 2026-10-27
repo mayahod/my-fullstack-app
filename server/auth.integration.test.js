@@ -202,6 +202,85 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
         []
       );
     });
+    await t.test('privacy defaults, optional photos and owner-only publication', async () => {
+      const payload = {
+        title: 'Private test',
+        category: 'סלט',
+        ingredients: ['מלפפון'],
+        steps: ['קוצצים'],
+      };
+      const created = await request('/api/recipes', 'POST', payload, token);
+      assert.equal(created.status, 201);
+      const id = created.body.recipe._id;
+      assert.equal(created.body.recipe.isPublic, false);
+      assert.equal(created.body.recipe.imageUrl, '');
+      const other = await request('/api/users/login', 'POST', { email: secondEmail, password });
+      const otherToken = other.body.token;
+      for (const viewer of [undefined, otherToken]) {
+        assert.equal((await request(`/api/recipes/${id}`, 'GET', undefined, viewer)).status, 404);
+      }
+      assert.equal((await request(`/api/recipes/${id}`, 'GET', undefined, 'invalid')).status, 401);
+      assert.equal((await request(`/api/recipes/${id}`, 'GET', undefined, token)).status, 200);
+      assert.ok(
+        (await request('/api/recipes/mine', 'GET', undefined, token)).body.recipes.some(
+          (recipe) => recipe._id === id
+        )
+      );
+      assert.ok(!(await request('/api/recipes')).body.recipes.some((recipe) => recipe._id === id));
+      assert.notEqual((await request('/api/recipes/random')).body?._id, id);
+      assert.equal(
+        (await request(`/api/recipes/${id}`, 'PATCH', { isPublic: true }, otherToken)).status,
+        404
+      );
+      for (const value of ['true', 'false', null, 1, {}]) {
+        assert.equal(
+          (await request(`/api/recipes/${id}`, 'PATCH', { isPublic: value }, token)).status,
+          400
+        );
+        assert.equal(
+          (await request('/api/recipes', 'POST', { ...payload, isPublic: value }, token)).status,
+          400
+        );
+      }
+      const published = await request(`/api/recipes/${id}`, 'PATCH', { isPublic: true }, token);
+      assert.equal(published.status, 200);
+      assert.equal(published.body.recipe.isPublic, true);
+      assert.equal((await request(`/api/recipes/${id}`)).status, 200);
+      assert.equal((await request(`/api/recipes/${id}`, 'GET', undefined, otherToken)).status, 200);
+      assert.ok((await request('/api/recipes')).body.recipes.some((recipe) => recipe._id === id));
+      await request(`/api/recipes/${id}`, 'PATCH', { isPublic: false, imageUrl: '' }, token);
+      assert.equal((await request(`/api/recipes/${id}`)).status, 404);
+      assert.ok(!(await request('/api/recipes')).body.recipes.some((recipe) => recipe._id === id));
+      assert.equal(
+        (await request(`/api/recipes/${id}`, 'GET', undefined, token)).body.recipe.isPublic,
+        false
+      );
+      const explicitPublic = await request(
+        '/api/recipes',
+        'POST',
+        { ...payload, isPublic: true },
+        token
+      );
+      assert.equal(explicitPublic.status, 201);
+      assert.equal((await request(`/api/recipes/${explicitPublic.body.recipe._id}`)).status, 200);
+      // Bypass defaults to represent a document published before visibility existed.
+      const legacy = await Recipe.collection.insertOne({
+        ...payload,
+        createdBy: new mongoose.Types.ObjectId(userId),
+      });
+      const legacyId = legacy.insertedId.toString();
+      assert.equal((await request(`/api/recipes/${legacyId}`)).body.recipe.isPublic, true);
+      assert.ok(
+        (await request('/api/recipes')).body.recipes.some((recipe) => recipe._id === legacyId)
+      );
+      assert.equal(
+        (await request(`/api/recipes/${legacyId}`, 'PATCH', { title: 'Edited legacy' }, token)).body
+          .recipe.isPublic,
+        true
+      );
+      await request(`/api/recipes/${legacyId}`, 'PATCH', { isPublic: false }, token);
+      assert.equal((await request(`/api/recipes/${legacyId}`)).status, 404);
+    });
     await t.test(
       'password reset reports unavailable instead of claiming an email was sent',
       async () => {

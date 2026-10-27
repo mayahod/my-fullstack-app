@@ -129,7 +129,7 @@ try {
     const photoName = recipe.imageUrl.split('/').pop().replace('.svg', '');
     recipe.imageUrl = photos[photoName].imageUrl;
     if (!(await Recipe.exists({ title: recipe.title }))) {
-      await Recipe.create(recipe);
+      await Recipe.create({ ...recipe, isPublic: true });
       added++;
     }
   }

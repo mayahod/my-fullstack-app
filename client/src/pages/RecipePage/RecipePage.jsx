@@ -2,30 +2,36 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import styles from './RecipePage.module.css';
 import { API_BASE } from '../../services/config';
-import { getCachedRecipe } from '../../services/recipes';
+import { useAuth } from '../../context/AuthContext';
 function RecipePage() {
   const { id } = useParams();
-  const [recipe, setRecipe] = useState(() => getCachedRecipe(id));
+  const { token } = useAuth();
+  const [recipe, setRecipe] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    setRecipe(getCachedRecipe(id));
+    setRecipe(null);
     setError(null);
-    fetch(`${API_BASE}/api/recipes/${id}`, { signal: controller.signal })
+    fetch(`${API_BASE}/api/recipes/${id}`, {
+      signal: controller.signal,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((res) => {
-        if (!res.ok) throw new Error('Recipe unavailable');
+        if (!res.ok)
+          throw new Error(
+            res.status === 404 ? 'המתכון לא נמצא או שהוא פרטי.' : 'לא ניתן לטעון את המתכון כרגע.'
+          );
         return res.json();
       })
       .then((data) => {
         setRecipe(data.recipe);
       })
       .catch((err) => {
-        if (err.name !== 'AbortError')
-          setError('לא ניתן לטעון את המתכון כרגע. נסו לרענן את העמוד.');
+        if (err.name !== 'AbortError') setError(err.message);
       });
     return () => controller.abort();
-  }, [id]);
+  }, [id, token]);
 
   return (
     <div className={styles.container}>
@@ -47,7 +53,9 @@ function RecipePage() {
             {recipe.steps && recipe.steps.map((step, index) => <li key={index}>{step}</li>)}
           </ol>
 
-          <img src={recipe.imageUrl} alt={recipe.title} className={styles.image} />
+          {recipe.imageUrl && (
+            <img src={recipe.imageUrl} alt={recipe.title} className={styles.image} />
+          )}
         </div>
       ) : null}
     </div>

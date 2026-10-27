@@ -16,9 +16,9 @@ Reset tokens contain 32 random bytes. Only their SHA-256 hash is stored, with a 
 
 ## Recipe ownership
 
-Public readers can list and open recipes. The server takes `createdBy` from the verified user when creating a recipe. Editing and deleting query by both recipe ID and owner ID; callers cannot assign ownership through the payload. Seed recipes can have no owner and remain publicly readable.
+Public readers can list and open public recipes. New recipes default to private and photos are optional. Only the verified owner can read a private recipe or change its visibility. Legacy documents without a visibility field stay public; lean reads preserve that distinction. Recipe responses use `Cache-Control: no-store`. The server takes `createdBy` from the verified user when creating a recipe. Editing and deleting query by both recipe ID and owner ID; callers cannot assign ownership through the payload. Seed recipes can have no owner and remain publicly readable.
 
-`client/src/services/recipes.js` caches the public list in memory for 30 seconds and shares in-flight list requests. Successful mutations invalidate that cache. Authenticated requests and tokens are never included in the recipe cache. Opening a known recipe can display cached content while fetching its current version.
+`client/src/services/recipes.js` caches the public list in memory for 30 seconds and shares in-flight list requests. Successful mutations invalidate that cache. Authenticated requests and tokens are never included in the recipe cache. Recipe details are fetched with the current session rather than rendered from the list cache, so access is checked after visibility changes.
 
 ## Styling
 
