@@ -4,7 +4,9 @@ import dotenv from 'dotenv';
 import Recipe from './models/Recipe.js';
 
 dotenv.config();
-const photos = JSON.parse(await fs.readFile(new URL('../client/public/images/photo-credits.json', import.meta.url), 'utf8'));
+const photos = JSON.parse(
+  await fs.readFile(new URL('../client/public/images/photo-credits.json', import.meta.url), 'utf8')
+);
 
 // Check every source before changing any recipe.
 for (const [name, photo] of Object.entries(photos)) {
@@ -24,7 +26,7 @@ try {
     const result = await Recipe.updateMany(
       { imageUrl: `/images/${name}.svg` },
       { $set: { imageUrl: photo.imageUrl } },
-      { runValidators: true },
+      { runValidators: true }
     );
     updated += result.modifiedCount;
   }

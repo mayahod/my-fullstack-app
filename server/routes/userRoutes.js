@@ -1,6 +1,11 @@
-// server/routes/userRoutes.js
 import express from 'express';
-import { registerUser, loginUser, forgotPassword, currentUser, resetPassword } from '../controllers/userController.js';
+import {
+  registerUser,
+  loginUser,
+  forgotPassword,
+  currentUser,
+  resetPassword,
+} from '../controllers/userController.js';
 import { requireAuth } from '../auth.js';
 import { rateLimit } from '../rateLimit.js';
 

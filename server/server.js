@@ -1,4 +1,3 @@
-// server/server.js
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -38,7 +37,11 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/recipes', recipesRoutes);
 app.use('/api/users', userRoutes);
-app.get('/api/health', (req, res) => res.status(mongoose.connection.readyState === 1 ? 200 : 503).json({ ok: mongoose.connection.readyState === 1 }));
+app.get('/api/health', (req, res) =>
+  res
+    .status(mongoose.connection.readyState === 1 ? 200 : 503)
+    .json({ ok: mongoose.connection.readyState === 1 })
+);
 app.use('/api', (req, res) => res.status(404).json({ message: 'הכתובת לא נמצאה' }));
 
 if (process.env.NODE_ENV === 'production') {
@@ -47,7 +50,8 @@ if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => res.sendFile(path.join(clientPath, 'index.html')));
 }
 app.use((error, req, res, next) => {
-  res.status(error.status === 413 ? 413 : error instanceof SyntaxError ? 400 : 500)
+  res
+    .status(error.status === 413 ? 413 : error instanceof SyntaxError ? 400 : 500)
     .json({ message: 'הבקשה לא תקינה או שאירעה שגיאה בשרת' });
 });
 
@@ -59,4 +63,7 @@ mongoose
       console.log('connected to mongoDB & listening on port', PORT);
     });
   })
-  .catch(() => { console.error('Unable to connect to MongoDB. Check MONGO_URI and Atlas network access.'); process.exitCode = 1; });
+  .catch(() => {
+    console.error('Unable to connect to MongoDB. Check MONGO_URI and Atlas network access.');
+    process.exitCode = 1;
+  });

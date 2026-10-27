@@ -1,6 +1,6 @@
 import styles from './AddRecipe.module.css';
 import { addRecipe } from '../../services/recipes';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FaCheckCircle, FaTimesCircle, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -34,17 +34,6 @@ const AddRecipe = () => {
     try {
       await addRecipe(formData, token);
       navigate('/dashboard', { state: { notice: 'המתכון נוסף בהצלחה' } });
-      return;
-      setMessage('!המתכון נוסף בהצלחה');
-      setMessageType('success');
-
-      setFormData({
-        title: '',
-        ingredients: '',
-        steps: '',
-        category: '',
-        imageUrl: '',
-      });
     } catch (error) {
       console.error('Error adding recipe:', error);
       setMessage('שגיאה בהוספת המתכון');
@@ -117,7 +106,9 @@ const AddRecipe = () => {
           required
         />
 
-        <button type="submit" disabled={saving}>{saving ? 'שומרים…' : 'הוסף מתכון'}</button>
+        <button type="submit" disabled={saving}>
+          {saving ? 'שומרים…' : 'הוסף מתכון'}
+        </button>
       </form>
     </div>
   );

@@ -1,5 +1,4 @@
-// client/src/components/common/SuccessOverlay.jsx
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import styles from './SuccessOverlay.module.css';
 
 export default function SuccessOverlay({ title, subtitle, autoCloseMs = 1200, onClose, goNext }) {

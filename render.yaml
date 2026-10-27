@@ -3,7 +3,7 @@ services:
     name: maya-recipes
     runtime: node
     plan: free
-    region: frankfurt
+    region: ohio
     buildCommand: npm run build
     startCommand: npm start
     healthCheckPath: /api/health
@@ -13,12 +13,12 @@ services:
       - key: NODE_VERSION
         value: 22
       - key: VITE_API_URL
-        value: ""
+        value: ''
       - key: JWT_SECRET
         generateValue: true
       - key: MONGO_URI
         sync: false
-      - key: RESEND_API_KEY
+      - key: BREVO_API_KEY
         sync: false
       - key: MAIL_FROM
         sync: false

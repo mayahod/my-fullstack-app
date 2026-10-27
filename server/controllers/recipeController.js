@@ -1,4 +1,3 @@
-// server/controllers/recipesController.js
 import Recipe from '../models/Recipe.js';
 
 // GET /api/recipes
@@ -11,7 +10,7 @@ const getAllRecipes = async (req, res) => {
   }
 };
 
-// GET /api/recipes/random
+// GET /api/recipes/mine
 const getMyRecipes = async (req, res) => {
   try {
     const recipes = await Recipe.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
@@ -45,51 +44,23 @@ const getSingleRecipe = async (req, res) => {
   }
 };
 
-// // POST /api/recipes
-// const createRecipe = async (req, res) => {
-//   let { title, ingredients, steps, category, imageUrl } = req.body;
-
-//   try {
-//     if (typeof ingredients === 'string') {
-//       ingredients = ingredients
-//         .split('\n')
-//         .map((line) => line.trim())
-//         .filter((line) => line.length > 0);
-//     }
-
-//     if (typeof steps === 'string') {
-//       steps = steps
-//         .split('\n')
-//         .map((line) => line.trim())
-//         .filter((line) => line.length > 0);
-//     }
-
-//     const recipe = await Recipe.create({
-//       title,
-//       ingredients,
-//       steps,
-//       category,
-//       imageUrl,
-//     });
-
-//     res.status(201).json({ recipe });
-//   } catch (err) {
-//     console.error('Error creating recipe:', err.message);
-//     res.status(400).json({ mssg: 'Error creating recipe', err });
-//   }
-// };
-
 const createRecipe = async (req, res) => {
   let { title, ingredients, steps, category, imageUrl } = req.body;
   const createdBy = req.user._id;
 
   try {
     if (typeof ingredients === 'string') {
-      ingredients = ingredients.split('\n').map((line) => line.trim()).filter(Boolean);
+      ingredients = ingredients
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
     }
 
     if (typeof steps === 'string') {
-      steps = steps.split('\n').map((line) => line.trim()).filter(Boolean);
+      steps = steps
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
     }
 
     const recipe = await Recipe.create({
@@ -108,7 +79,6 @@ const createRecipe = async (req, res) => {
   }
 };
 
-
 // DELETE /api/recipes/:id
 const deleteRecipe = async (req, res) => {
   const { id } = req.params;
@@ -125,16 +95,28 @@ const deleteRecipe = async (req, res) => {
 const updateRecipe = async (req, res) => {
   const { id } = req.params;
 
-  const allowed = ['title', 'category', 'imageUrl', 'ingredients', 'steps'];
+  const editableFields = ['title', 'category', 'imageUrl', 'ingredients', 'steps'];
   const update = {};
-  for (const key of allowed) if (req.body[key] !== undefined) update[key] = req.body[key];
+  for (const key of editableFields) if (req.body[key] !== undefined) update[key] = req.body[key];
   for (const key of ['ingredients', 'steps']) {
-    if (typeof update[key] === 'string') update[key] = update[key].split('\n').map((line) => line.trim()).filter(Boolean);
+    if (typeof update[key] === 'string')
+      update[key] = update[key]
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
   }
   for (const key of ['title', 'category', 'imageUrl']) {
     if (typeof update[key] === 'string') update[key] = update[key].trim();
   }
-  if (['ingredients', 'steps'].some((key) => update[key] !== undefined && (!Array.isArray(update[key]) || !update[key].length || update[key].some((line) => typeof line !== 'string' || !line.trim())))) {
+  if (
+    ['ingredients', 'steps'].some(
+      (key) =>
+        update[key] !== undefined &&
+        (!Array.isArray(update[key]) ||
+          !update[key].length ||
+          update[key].some((line) => typeof line !== 'string' || !line.trim()))
+    )
+  ) {
     return res.status(400).json({ message: 'יש להזין לפחות מצרך אחד ושלב הכנה אחד' });
   }
 

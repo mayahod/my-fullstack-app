@@ -5,7 +5,11 @@ import { randomBytes, createHash } from 'node:crypto';
 import { mailConfigured, publicAppUrl, sendPasswordResetEmail } from '../services/mail.js';
 
 import { getSecret, publicUser } from '../auth.js';
-const normalizedEmail = (value) => typeof value === 'string' ? value.trim().toLowerCase() : '';
+const BCRYPT_ROUNDS = 10;
+const RESET_TOKEN_TTL_MS = 30 * 60_000;
+const RESET_REQUEST_COOLDOWN_MS = 60_000;
+
+const normalizedEmail = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
 const validEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;
 
 export const registerUser = async (req, res) => {
@@ -17,14 +21,18 @@ export const registerUser = async (req, res) => {
     if (!firstName || firstName.length > 100 || lastName.length > 100 || !validEmail(email)) {
       return res.status(400).json({ message: 'נא להזין שם פרטי ואימייל תקינים' });
     }
-    if (typeof password !== 'string' || password.trim().length < 8 || Buffer.byteLength(password, 'utf8') > 72) {
+    if (
+      typeof password !== 'string' ||
+      password.trim().length < 8 ||
+      Buffer.byteLength(password, 'utf8') > 72
+    ) {
       return res.status(400).json({ message: 'הסיסמה צריכה להכיל לפחות 8 תווים ועד 72 בתים' });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(409).json({ message: 'משתמש עם האימייל הזה כבר קיים' });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
     const newUser = new User({
       firstName,
@@ -36,7 +44,8 @@ export const registerUser = async (req, res) => {
     await newUser.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    if (error.code === 11000) return res.status(409).json({ message: 'משתמש עם האימייל הזה כבר קיים' });
+    if (error.code === 11000)
+      return res.status(409).json({ message: 'משתמש עם האימייל הזה כבר קיים' });
     res.status(500).json({ message: 'שגיאה בשרת, נסו שוב מאוחר יותר' });
   }
 };
@@ -45,7 +54,12 @@ export const loginUser = async (req, res) => {
   try {
     const email = normalizedEmail(req.body.email);
     const password = req.body.password;
-    if (!validEmail(email) || typeof password !== 'string' || !password || Buffer.byteLength(password, 'utf8') > 72) {
+    if (
+      !validEmail(email) ||
+      typeof password !== 'string' ||
+      !password ||
+      Buffer.byteLength(password, 'utf8') > 72
+    ) {
       return res.status(400).json({ message: 'נא להזין אימייל וסיסמה תקינים' });
     }
 
@@ -55,11 +69,13 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'האימייל או הסיסמה שגויים' });
 
-    const token = jwt.sign({ id: user._id.toString(), version: user.passwordVersion || 0 }, getSecret(), { expiresIn: '2h', algorithm: 'HS256' });
+    const token = jwt.sign(
+      { id: user._id.toString(), version: user.passwordVersion || 0 },
+      getSecret(),
+      { expiresIn: '2h', algorithm: 'HS256' }
+    );
 
-    res
-      .status(200)
-      .json({ token, user: publicUser(user) });
+    res.status(200).json({ token, user: publicUser(user) });
   } catch (error) {
     res.status(500).json({ message: 'שגיאה בשרת, נסו שוב מאוחר יותר' });
   }
@@ -73,18 +89,38 @@ export const forgotPassword = async (req, res) => {
     if (!req.app.locals.sendPasswordResetEmail && !mailConfigured()) {
       return res.status(503).json({ message: 'שירות המייל טרם הוגדר. לא נשלח מייל.' });
     }
-    const message = 'אם קיים חשבון עם האימייל הזה, יישלח אליו קישור לאיפוס סיסמה. הקישור תקף ל־30 דקות.';
+    const message =
+      'אם קיים חשבון עם האימייל הזה, יישלח אליו קישור לאיפוס סיסמה. הקישור תקף ל־30 דקות.';
     const rawToken = randomBytes(32).toString('hex');
     const hash = createHash('sha256').update(rawToken).digest('hex');
     const now = new Date();
-    const user = await User.findOneAndUpdate({ email, $or: [{ resetRequestedAt: { $exists: false } }, { resetRequestedAt: { $lt: new Date(Date.now() - 60000) } }] },
-      { $set: { resetTokenHash: hash, resetTokenExpires: new Date(Date.now() + 30 * 60000), resetRequestedAt: now } }, { new: true });
+    // Unknown accounts and cooldowns share a response to avoid revealing registered emails.
+    const user = await User.findOneAndUpdate(
+      {
+        email,
+        $or: [
+          { resetRequestedAt: { $exists: false } },
+          { resetRequestedAt: { $lt: new Date(Date.now() - RESET_REQUEST_COOLDOWN_MS) } },
+        ],
+      },
+      {
+        $set: {
+          resetTokenHash: hash,
+          resetTokenExpires: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+          resetRequestedAt: now,
+        },
+      },
+      { new: true }
+    );
     if (!user) return res.json({ message });
     try {
       const resetUrl = `${publicAppUrl()}/reset-password#token=${rawToken}`;
       await mailer({ to: user.email, resetUrl });
     } catch {
-      await User.updateOne({ _id: user._id, resetTokenHash: hash }, { $unset: { resetTokenHash: '', resetTokenExpires: '', resetRequestedAt: '' } });
+      await User.updateOne(
+        { _id: user._id, resetTokenHash: hash },
+        { $unset: { resetTokenHash: '', resetTokenExpires: '', resetRequestedAt: '' } }
+      );
       return res.status(503).json({ message: 'שליחת המייל נכשלה. נסו שוב מאוחר יותר.' });
     }
     return res.json({ message });
@@ -95,18 +131,33 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   const { token, password } = req.body;
-  if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) return res.status(400).json({ message: 'הקישור אינו תקין או שפג תוקפו. בקשו קישור חדש.' });
-  if (typeof password !== 'string' || password.trim().length < 8 || Buffer.byteLength(password, 'utf8') > 72) {
+  if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token))
+    return res.status(400).json({ message: 'הקישור אינו תקין או שפג תוקפו. בקשו קישור חדש.' });
+  if (
+    typeof password !== 'string' ||
+    password.trim().length < 8 ||
+    Buffer.byteLength(password, 'utf8') > 72
+  ) {
     return res.status(400).json({ message: 'הסיסמה צריכה להכיל לפחות 8 תווים ועד 72 בתים' });
   }
   try {
     const hash = createHash('sha256').update(token).digest('hex');
-    const passwordHash = await bcrypt.hash(password, 10);
-    const user = await User.findOneAndUpdate({ resetTokenHash: hash, resetTokenExpires: { $gt: new Date() } },
-      { $set: { password: passwordHash }, $inc: { passwordVersion: 1 }, $unset: { resetTokenHash: '', resetTokenExpires: '', resetRequestedAt: '' } });
-    if (!user) return res.status(400).json({ message: 'הקישור אינו תקין או שפג תוקפו. בקשו קישור חדש.' });
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    // An atomic update allows only one submission to consume this reset token.
+    const user = await User.findOneAndUpdate(
+      { resetTokenHash: hash, resetTokenExpires: { $gt: new Date() } },
+      {
+        $set: { password: passwordHash },
+        $inc: { passwordVersion: 1 },
+        $unset: { resetTokenHash: '', resetTokenExpires: '', resetRequestedAt: '' },
+      }
+    );
+    if (!user)
+      return res.status(400).json({ message: 'הקישור אינו תקין או שפג תוקפו. בקשו קישור חדש.' });
     return res.json({ message: 'הסיסמה עודכנה בהצלחה. כעת אפשר להתחבר עם הסיסמה החדשה.' });
-  } catch { return res.status(500).json({ message: 'שגיאה בשרת. נסו שוב מאוחר יותר.' }); }
+  } catch {
+    return res.status(500).json({ message: 'שגיאה בשרת. נסו שוב מאוחר יותר.' });
+  }
 };
 
 export const currentUser = (req, res) => res.json({ user: publicUser(req.user) });

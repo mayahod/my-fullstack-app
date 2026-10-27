@@ -1,6 +1,6 @@
 import styles from '../../pages/HomePage/Home.module.css';
 import { FaSearch, FaTimes } from 'react-icons/fa';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const SearchBar = ({ onSearchChange }) => {
@@ -34,14 +34,27 @@ const SearchBar = ({ onSearchChange }) => {
         placeholder="  חפש מתכון..."
         className={styles.searchInput}
         value={searchTerm}
-        onKeyDown={(event) => { if (event.key === 'Enter') handleSearchClick(); }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') handleSearchClick();
+        }}
         onChange={(e) => {
           setSearchTerm(e.target.value);
           onSearchChange(e.target.value);
         }}
       />
 
-      {searchTerm && <FaTimes className={styles.iconClear} onClick={handleClear} role="button" aria-label="ניקוי החיפוש" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') handleClear(); }} />}
+      {searchTerm && (
+        <FaTimes
+          className={styles.iconClear}
+          onClick={handleClear}
+          role="button"
+          aria-label="ניקוי החיפוש"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') handleClear();
+          }}
+        />
+      )}
     </div>
   );
 };

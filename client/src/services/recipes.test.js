@@ -25,5 +25,7 @@ test('recipe navigation shares requests, invalidates after edits, and retries fa
     fail = false;
     assert.equal((await fetchRecipes()).length, 1);
     assert.equal(calls, 4);
-  } finally { globalThis.fetch = originalFetch; }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

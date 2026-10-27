@@ -15,7 +15,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "vite"
+    "start": "vite",
+    "test": "node --test src/context/session.test.js src/services/recipes.test.js",
+    "lint": "eslint src --ext .js,.jsx --max-warnings 0",
+    "format": "prettier --ignore-path ../.prettierignore --ignore-unknown --write ../client/src ../server ../docs ../README.md ../DEPLOYMENT.md ../client/README.md ../*.json ../render.yaml ../.github ../client/*.js ../client/*.cjs ../client/*.json ../client/index.html",
+    "format:check": "prettier --ignore-path ../.prettierignore --ignore-unknown --check ../client/src ../server ../docs ../README.md ../DEPLOYMENT.md ../client/README.md ../*.json ../render.yaml ../.github ../client/*.js ../client/*.cjs ../client/*.json ../client/index.html"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",

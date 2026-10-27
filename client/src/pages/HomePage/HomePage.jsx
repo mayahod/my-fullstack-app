@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import styles from './Home.module.css';
 import { fetchRecipes } from '../../services/recipes';
 import RecipeCard from '../../components/RecipeCard';
@@ -20,18 +20,26 @@ const HomePage = () => {
     setIsLoading(true);
     setError(null);
     setSlow(false);
-    const timer = setTimeout(() => { if (active) setSlow(true); }, 8000);
+    const timer = setTimeout(() => {
+      if (active) setSlow(true);
+    }, 8000);
     fetchRecipes()
       .then((data) => {
         if (!active) return;
         const list = Array.isArray(data) ? data : (data?.recipes ?? []);
         setRecipes(list);
       })
-      .catch((err) => {
+      .catch(() => {
         if (active) setError('לא ניתן לטעון את המתכונים כרגע. בדקו את החיבור ונסו שוב.');
       })
-      .finally(() => { clearTimeout(timer); if (active) setIsLoading(false); });
-    return () => { active = false; clearTimeout(timer); };
+      .finally(() => {
+        clearTimeout(timer);
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [attempt]);
 
   const handleSearchChange = (term) => setSearchTerm(term);
@@ -61,8 +69,6 @@ const HomePage = () => {
     if (!q) return [];
     return recipes.filter((r) => r.title?.toLowerCase().includes(q));
   }, [recipes, searchTerm]);
-
-  const showSuggestions = searchTerm.trim().length > 0 && filteredRecipes.length > 0;
 
   return (
     <div className={styles.home}>
@@ -137,9 +143,15 @@ const HomePage = () => {
       </div>
 
       {isLoading ? (
-        <div className={styles.status} role="status"><p>טוען מתכונים…</p>{slow && <p>הטעינה מתארכת מעט. עוד רגע המתכונים כאן.</p>}</div>
+        <div className={styles.status} role="status">
+          <p>טוען מתכונים…</p>
+          {slow && <p>הטעינה מתארכת מעט. עוד רגע המתכונים כאן.</p>}
+        </div>
       ) : error ? (
-        <div className={styles.status} role="alert"><p>{error}</p><button onClick={() => setAttempt((value) => value + 1)}>נסו שוב</button></div>
+        <div className={styles.status} role="alert">
+          <p>{error}</p>
+          <button onClick={() => setAttempt((value) => value + 1)}>נסו שוב</button>
+        </div>
       ) : filteredRecipes.length === 0 ? (
         <p className={styles.status}>לא נמצאו מתכונים בסינון שבחרת</p>
       ) : (

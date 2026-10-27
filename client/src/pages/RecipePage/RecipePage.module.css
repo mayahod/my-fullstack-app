@@ -1,5 +1,5 @@
 .container {
-  background-color: #fdf0f5; 
+  background-color: #fdf0f5;
   padding: 20px;
   border-radius: 12px;
   text-align: center;
@@ -23,11 +23,11 @@
   list-style: none;
   padding: 10px 16px;
   margin: 0 auto 16px auto;
-  max-width: 280px; 
+  max-width: 280px;
   text-align: right;
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .ingredientsList li {
@@ -35,17 +35,16 @@
   line-height: 1.5;
 }
 
-
 .stepsList {
-  list-style: decimal;  
-  direction: rtl;     
+  list-style: decimal;
+  direction: rtl;
   padding: 10px 24px;
   margin: 0 auto 16px auto;
-  max-width: 450px;   
+  max-width: 450px;
   text-align: right;
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .stepsList li {
@@ -53,12 +52,11 @@
   line-height: 1.6;
 }
 
-
 .image {
   width: min(300px, 100%);
   height: 300px;
   object-fit: cover;
   border-radius: 8px;
   margin-top: 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }

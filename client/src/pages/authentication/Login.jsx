@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import styles from './Auth.module.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -17,7 +17,7 @@ const Login = () => {
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetMsg, setResetMsg] = useState(null);
-  const [resetType, setResetType] = useState(''); 
+  const [resetType, setResetType] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -43,8 +43,10 @@ const Login = () => {
         setMessageType('success');
         setFormData({ email: '', password: '' });
         const from = location.state?.from;
-        const destination = from?.pathname?.startsWith('/') && !from.pathname.startsWith('//')
-          ? `${from.pathname}${from.search || ''}${from.hash || ''}` : '/dashboard';
+        const destination =
+          from?.pathname?.startsWith('/') && !from.pathname.startsWith('//')
+            ? `${from.pathname}${from.search || ''}${from.hash || ''}`
+            : '/dashboard';
         navigate(destination, { replace: true });
         return;
       }
@@ -98,7 +100,15 @@ const Login = () => {
       <h1>התחברות</h1>
       <form className={styles.form} onSubmit={handleSubmit}>
         <label>אימייל:</label>
-        <input aria-label="אימייל" autoComplete="username" type="email" name="email" value={formData.email} onChange={handleChange} required />
+        <input
+          aria-label="אימייל"
+          autoComplete="username"
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
 
         <label>סיסמה:</label>
         <input
@@ -125,7 +135,9 @@ const Login = () => {
           </button>
         </div>
 
-        <button type="submit" disabled={loading}>{loading ? 'מתחברים…' : 'התחבר'}</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'מתחברים…' : 'התחבר'}
+        </button>
       </form>
 
       {showReset && (

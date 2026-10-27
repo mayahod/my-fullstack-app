@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import styles from './Auth.module.css';
 import SuccessOverlay from '../../components/common/SuccessOverlay';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { API_BASE } from '../../services/config';
 
 export default function Register() {
@@ -33,12 +33,6 @@ export default function Register() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      //   const data = await res.json();
-
-      //   if (!res.ok) {
-      //     setError(toHebrewError(data.message, res.status));
-      //     return;
-      //   }
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -78,15 +72,50 @@ export default function Register() {
       <h1>הרשמה</h1>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>שם פרטי:</label>
-        <input aria-label="שם פרטי" autoComplete="given-name" name="firstName" maxLength={100} value={form.firstName} onChange={onChange} required />
+        <input
+          aria-label="שם פרטי"
+          autoComplete="given-name"
+          name="firstName"
+          maxLength={100}
+          value={form.firstName}
+          onChange={onChange}
+          required
+        />
         <label>שם משפחה:</label>
-        <input aria-label="שם משפחה" autoComplete="family-name" name="lastName" maxLength={100} value={form.lastName} onChange={onChange} required />
+        <input
+          aria-label="שם משפחה"
+          autoComplete="family-name"
+          name="lastName"
+          maxLength={100}
+          value={form.lastName}
+          onChange={onChange}
+          required
+        />
         <label>אימייל:</label>
-        <input aria-label="אימייל" autoComplete="email" type="email" name="email" value={form.email} onChange={onChange} required />
+        <input
+          aria-label="אימייל"
+          autoComplete="email"
+          type="email"
+          name="email"
+          value={form.email}
+          onChange={onChange}
+          required
+        />
         <label>סיסמה:</label>
-        <input aria-label="סיסמה" autoComplete="new-password" type="password" name="password" minLength={8} value={form.password} onChange={onChange} required />
+        <input
+          aria-label="סיסמה"
+          autoComplete="new-password"
+          type="password"
+          name="password"
+          minLength={8}
+          value={form.password}
+          onChange={onChange}
+          required
+        />
         <small>לפחות 8 תווים</small>
-        <button type="submit" disabled={loading}>{loading ? 'נרשמים…' : 'הרשמי'}</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'נרשמים…' : 'הרשמי'}
+        </button>
       </form>
     </div>
   );

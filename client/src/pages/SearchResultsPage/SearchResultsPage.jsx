@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import styles from './SearchResultsPage.module.css';
 import RecipeCard from '../../components/RecipeCard';
@@ -29,7 +28,7 @@ const SearchResultsPage = () => {
   const results = useMemo(() => {
     if (!query) return [];
     const q = query.toLowerCase();
-    return all.filter(r => r.title?.toLowerCase().includes(q));
+    return all.filter((r) => r.title?.toLowerCase().includes(q));
   }, [all, query]);
 
   return (

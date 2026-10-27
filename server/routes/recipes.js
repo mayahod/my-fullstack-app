@@ -18,7 +18,7 @@ const router = express.Router();
 // GET all Recipes
 router.get('/', getAllRecipes);
 
-// GET a random Recipe
+// Named routes must precede /:id so they are not interpreted as recipe IDs.
 router.get('/random', getRandomRecipe);
 router.get('/mine', requireAuth, getMyRecipes);
 
