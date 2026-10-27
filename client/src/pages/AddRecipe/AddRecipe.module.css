@@ -1,12 +1,12 @@
 .container {
   text-align: center;
   padding: 40px;
-  background-color: #fde7ef;
-  min-height: 100vh;
+  background-color: transparent;
+  min-height: 65vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-h1 {
+.container h1 {
   color: #53474f;
   margin-bottom: 30px;
 }
@@ -23,9 +23,9 @@ h1 {
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
-input,
-textarea,
-select {
+.form input,
+.form textarea,
+.form select {
   padding: 10px 12px;
   border: 1.5px solid #ff80aa;
   border-radius: 12px;
@@ -38,13 +38,13 @@ select {
   transition: border-color 0.2s;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
+.form input:focus,
+.form textarea:focus,
+.form select:focus {
   border-color: #ff6699;
 }
 
-button {
+.form button {
   background-color: #ff80aa;
   color: white;
   border: none;
@@ -57,7 +57,7 @@ button {
   letter-spacing: 0.5px;
 }
 
-button:hover {
+.form button:hover {
   background-color: #ff6699;
 }
 

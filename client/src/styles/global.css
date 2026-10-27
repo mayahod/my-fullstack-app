@@ -21,3 +21,7 @@ body {
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 3px solid #a43c64; outline-offset: 3px; }
+
+button { border: 0; border-radius: 10px; background: #a43c64; color: #fff; padding: 10px 16px; font-weight: 600; }
+button:disabled { opacity: .6; cursor: wait; }
+input, textarea, select { border: 1px solid #dfcdd5; border-radius: 10px; padding: 10px 12px; background: #fff; color: #453a40; }
