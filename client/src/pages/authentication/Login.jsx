@@ -46,7 +46,7 @@ const Login = () => {
         const destination =
           from?.pathname?.startsWith('/') && !from.pathname.startsWith('//')
             ? `${from.pathname}${from.search || ''}${from.hash || ''}`
-            : '/dashboard';
+            : '/community';
         navigate(destination, { replace: true });
         return;
       }

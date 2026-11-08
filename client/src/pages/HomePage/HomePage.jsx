@@ -4,7 +4,6 @@ import { fetchRecipes } from '../../services/recipes';
 import RecipeCard from '../../components/RecipeCard';
 import SearchBar from '../../components/common/SearchBar';
 import { Link } from 'react-router-dom';
-import discovery from '../../styles/Discovery.module.css';
 import { featuredRecipes } from '../../data/featuredRecipes';
 
 const HomePage = () => {
@@ -76,18 +75,33 @@ const HomePage = () => {
   return (
     <div className={styles.home}>
       <div className={styles.intro}>
-        <p className={styles.eyebrow}>מה מבשלים היום?</p>
-        <h1 className={styles.headline}>מתכונים שכיף לחזור אליהם</h1>
-        <div className={discovery.heroActions}>
-          <Link to="/pantry">מה אפשר להכין מהמצרכים שלי?</Link>
-          <Link to="/community">לגלות את הקהילה</Link>
-        </div>
+        <h1 className={styles.headline}>כל המתכונים</h1>
+        <Link to="/add" className={styles.addButton}>
+          הוספת מתכון
+        </Link>
       </div>
       <div className={styles.topBarContainer}>
-        <Link to="/add" className={styles.addButton}>
-          הוסף מתכון חדש
-        </Link>
+        <div className={styles.searchWrapper}>
+          <SearchBar onSearchChange={handleSearchChange} />
 
+          {searchSuggestions.length > 0 && (
+            <ul className={styles.suggestions} role="listbox">
+              {searchSuggestions.slice(0, 5).map((recipe) => (
+                <li key={recipe._id}>
+                  <Link to={`/recipes/${recipe._id}`} className={styles.suggestionItem}>
+                    {recipe.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {searchTerm.trim() && liveRecipes && searchSuggestions.length === 0 && (
+            <div className={styles.suggestions}>
+              <div className={styles.noResultsRow}>לא נמצאו תוצאות</div>
+            </div>
+          )}
+        </div>
         <div className={styles.topBar}>
           <div className={styles.filterButton}>
             <label htmlFor="filter" className={styles.filterLabel}>
@@ -126,27 +140,6 @@ const HomePage = () => {
             </select>
           </div>
         </div>
-      </div>
-      <div className={styles.searchWrapper}>
-        <SearchBar onSearchChange={handleSearchChange} />
-
-        {searchSuggestions.length > 0 && (
-          <ul className={styles.suggestions} role="listbox">
-            {searchSuggestions.slice(0, 5).map((recipe) => (
-              <li key={recipe._id}>
-                <Link to={`/recipes/${recipe._id}`} className={styles.suggestionItem}>
-                  {recipe.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {searchTerm.trim() && liveRecipes && searchSuggestions.length === 0 && (
-          <div className={styles.suggestions}>
-            <div className={styles.noResultsRow}>לא נמצאו תוצאות</div>
-          </div>
-        )}
       </div>
 
       {isLoading && slow && (

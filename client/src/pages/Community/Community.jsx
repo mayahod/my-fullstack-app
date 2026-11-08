@@ -1,221 +1,299 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { communityRequest } from '../../services/community';
 import Avatar from '../../components/Avatar';
 import CommunityPost from '../../components/CommunityPost';
-import styles from '../../styles/Discovery.module.css';
+import shared from '../../styles/Discovery.module.css';
+import styles from './Community.module.css';
 
-function PersonLink({ person }) {
+function useCommunityData(path, token) {
+  const [result, setResult] = useState(null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!path) return;
+    const controller = new AbortController();
+    communityRequest(path, { token, signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted) setResult({ path, data });
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) setResult({ path, error: err.message });
+      });
+    return () => controller.abort();
+  }, [path, token, attempt]);
+
+  const current = result?.path === path ? result : null;
+  return {
+    data: current?.data,
+    error: current?.error,
+    retry: () => {
+      setResult(null);
+      setAttempt((value) => value + 1);
+    },
+    refresh: () => setAttempt((value) => value + 1),
+    setData: (data) => setResult({ path, data }),
+  };
+}
+
+function LoadError({ error, onRetry }) {
   return (
-    <Link className={styles.person} to={`/people/${person.id}`}>
-      <Avatar person={person} size={36} />
-      <span>
-        {person.firstName}
-        {person.username && (
-          <bdi className={styles.handle} dir="ltr">
-            @{person.username}
-          </bdi>
+    <div className={styles.message} role="alert">
+      <p>{error}</p>
+      <button type="button" onClick={onRetry}>
+        נסו שוב
+      </button>
+    </div>
+  );
+}
+
+function RecipePosts({ recipes }) {
+  return (
+    <div className={styles.posts}>
+      {recipes.map((recipe) => (
+        <CommunityPost key={recipe._id} recipe={recipe} />
+      ))}
+    </div>
+  );
+}
+
+function PeopleDirectory({ user, following, onFollow, busyId, followError, retryFollowing }) {
+  const location = useLocation();
+  const [input, setInput] = useState('');
+  const [query, setQuery] = useState('');
+  const directory = useCommunityData('/people?q=' + encodeURIComponent(query));
+
+  return (
+    <section aria-labelledby="people-heading">
+      <div className={styles.sectionHeading}>
+        <h2 id="people-heading">חיפוש אנשים</h2>
+        <p>חפשו לפי שם או שם משתמש ועקבו אחרי מי שמעניין אתכם.</p>
+      </div>
+      <form
+        className={styles.search}
+        onSubmit={(event) => {
+          event.preventDefault();
+          setQuery(input.trim());
+        }}
+      >
+        <input
+          type="search"
+          aria-label="חיפוש לפי שם או שם משתמש"
+          placeholder="שם או @שם_משתמש"
+          value={input}
+          maxLength={80}
+          onChange={(event) => {
+            setInput(event.target.value);
+            if (!event.target.value) setQuery('');
+          }}
+        />
+        <button type="submit">חיפוש</button>
+      </form>
+      {followError && <LoadError error={followError} onRetry={retryFollowing} />}
+      {!user && (
+        <p className={styles.hint}>
+          <Link className={shared.textLink} to="/login" state={{ from: location }}>
+            התחברו כדי לעקוב
+          </Link>
+        </p>
+      )}
+      {directory.error ? (
+        <LoadError error={directory.error} onRetry={directory.retry} />
+      ) : !directory.data ? (
+        <p role="status">טוענים את רשימת האנשים…</p>
+      ) : directory.data.people.length ? (
+        <ul className={styles.directory}>
+          {directory.data.people.map((person) => {
+            const ownProfile = user?.id === person.id;
+            const followed = following?.some(({ id }) => id === person.id) ?? false;
+            return (
+              <li key={person.id} className={styles.personRow}>
+                <Link to={'/people/' + person.id} className={styles.personIdentity}>
+                  <Avatar person={person} size={42} />
+                  <span>
+                    <strong>{person.firstName}</strong>
+                    {person.username && <bdi dir="ltr">@{person.username}</bdi>}
+                  </span>
+                </Link>
+                {ownProfile ? (
+                  <span className={styles.hint}>הפרופיל שלי</span>
+                ) : (
+                  user && (
+                    <button
+                      type="button"
+                      className={followed ? styles.followingButton : styles.followButton}
+                      disabled={!following || Boolean(busyId)}
+                      aria-busy={busyId === person.id}
+                      aria-label={(followed ? 'הפסקת מעקב אחרי ' : 'מעקב אחרי ') + person.firstName}
+                      onClick={() => onFollow(person, followed)}
+                    >
+                      {busyId === person.id ? 'מעדכנים…' : followed ? 'במעקב' : 'לעקוב'}
+                    </button>
+                  )
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className={styles.message}>
+          {query ? 'לא נמצאו אנשים שמתאימים לחיפוש.' : 'עדיין אין פרופילים להצגה.'}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function CommunityViews({ user, token }) {
+  const [params] = useSearchParams();
+  const view = params.get('view');
+  const currentView = view === 'people' || view === 'discover' ? view : user ? 'feed' : 'discover';
+  const [busyId, setBusyId] = useState('');
+  const [followError, setFollowError] = useState('');
+  const feed = useCommunityData(user ? '/feed' : null, token);
+  const emptyFeed = currentView === 'feed' && feed.data?.recipes.length === 0;
+  const discover = useCommunityData(
+    currentView === 'discover' || emptyFeed ? '/discover' : null,
+    token
+  );
+
+  async function toggleFollow(person, followed) {
+    if (!feed.data || busyId) return;
+    setBusyId(person.id);
+    setFollowError('');
+    try {
+      const { isFollowing } = await communityRequest('/people/' + person.id + '/follow', {
+        token,
+        method: followed ? 'DELETE' : 'PUT',
+      });
+      const following = feed.data.following.filter(({ id }) => id !== person.id);
+      feed.setData({
+        following: isFollowing ? [...following, person] : following,
+        recipes: isFollowing
+          ? feed.data.recipes
+          : feed.data.recipes.filter((recipe) => recipe.createdBy !== person.id),
+      });
+      feed.refresh();
+    } catch (err) {
+      setFollowError(err.message);
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  const recentPosts = discover.error ? (
+    <LoadError error={discover.error} onRetry={discover.retry} />
+  ) : !discover.data ? (
+    <p role="status">טוענים מתכונים מהקהילה…</p>
+  ) : discover.data.recipes.length ? (
+    <RecipePosts recipes={discover.data.recipes} />
+  ) : (
+    <p className={styles.message}>עדיין אין מתכונים שפורסמו בקהילה.</p>
+  );
+
+  return (
+    <section className={styles.page}>
+      <header className={styles.header}>
+        <div>
+          {user && <p className={shared.kicker}>היי, {user.firstName}</p>}
+          <h1>{user ? 'הפיד שלי' : 'קהילת המתכונים'}</h1>
+          <p>
+            {user ? 'מתכונים מהאנשים שבחרת לעקוב אחריהם.' : 'מתכונים ביתיים ואנשים שאוהבים לבשל.'}
+          </p>
+        </div>
+        {user ? (
+          <Link className={shared.primaryLink} to="/add">
+            הוספת מתכון
+          </Link>
+        ) : (
+          <Link className={shared.primaryLink} to="/login">
+            התחברות
+          </Link>
         )}
-      </span>
-    </Link>
+      </header>
+
+      <nav className={styles.views} aria-label="תצוגות הקהילה">
+        {user && (
+          <Link to="/community" aria-current={currentView === 'feed' ? 'page' : undefined}>
+            במעקב
+          </Link>
+        )}
+        <Link
+          to="/community?view=discover"
+          aria-current={currentView === 'discover' ? 'page' : undefined}
+        >
+          לגלות מתכונים
+        </Link>
+        <Link
+          to="/community?view=people"
+          aria-current={currentView === 'people' ? 'page' : undefined}
+        >
+          חיפוש אנשים
+        </Link>
+      </nav>
+
+      {currentView === 'people' ? (
+        <PeopleDirectory
+          user={user}
+          following={feed.data?.following}
+          onFollow={toggleFollow}
+          busyId={busyId}
+          followError={followError || feed.error}
+          retryFollowing={() => {
+            setFollowError('');
+            feed.refresh();
+          }}
+        />
+      ) : currentView === 'discover' ? (
+        <section aria-labelledby="discover-heading">
+          <div className={styles.sectionHeading}>
+            <h2 id="discover-heading">חדשים בקהילה</h2>
+          </div>
+          {recentPosts}
+        </section>
+      ) : feed.error ? (
+        <LoadError error={feed.error} onRetry={feed.retry} />
+      ) : !feed.data ? (
+        <p role="status">טוענים את הפיד…</p>
+      ) : (
+        <section aria-labelledby="feed-heading">
+          <div className={styles.sectionHeading}>
+            <h2 id="feed-heading">מתכונים במעקב</h2>
+            <Link className={shared.textLink} to="/community?view=people">
+              למצוא אנשים
+            </Link>
+          </div>
+          {emptyFeed ? (
+            <>
+              <div className={styles.message}>
+                <p>
+                  {feed.data.following.length
+                    ? 'כאן יופיעו מתכונים חדשים מאנשים שבמעקב שלך.'
+                    : 'כדאי להתחיל בחיפוש אנשים שמבשלים דברים שאוהבים.'}
+                </p>
+              </div>
+              <div className={styles.sectionHeading}>
+                <h2>בינתיים, חדשים בקהילה</h2>
+              </div>
+              {recentPosts}
+            </>
+          ) : (
+            <RecipePosts recipes={feed.data.recipes} />
+          )}
+        </section>
+      )}
+    </section>
   );
 }
 
 export default function Community() {
-  const { isAuth, token, user } = useAuth();
-  const location = useLocation();
-  const [people, setPeople] = useState(null);
-  const [feed, setFeed] = useState(null);
-  const [recent, setRecent] = useState(null);
-  const [recentError, setRecentError] = useState('');
-  const [error, setError] = useState('');
-  const [attempt, setAttempt] = useState(0);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [peopleError, setPeopleError] = useState('');
-  const followedPosts = new Set(feed?.recipes.map((recipe) => recipe._id));
-  const discoveries = recent?.filter((recipe) => !followedPosts.has(recipe._id));
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setRecent(null);
-    setRecentError('');
-    communityRequest('/discover', { token: isAuth ? token : undefined, signal: controller.signal })
-      .then((data) => {
-        if (!controller.signal.aborted) setRecent(data.recipes);
-      })
-      .catch((err) => {
-        if (!controller.signal.aborted) setRecentError(err.message);
-      });
-    return () => controller.abort();
-  }, [token, isAuth, attempt]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setPeople(null);
-    setPeopleError('');
-    communityRequest('/people?q=' + encodeURIComponent(search), { signal: controller.signal })
-      .then((directory) => {
-        if (!controller.signal.aborted) setPeople(directory.people);
-      })
-      .catch((err) => {
-        if (!controller.signal.aborted) setPeopleError(err.message);
-      });
-    return () => controller.abort();
-  }, [search, attempt]);
-
-  useEffect(() => {
-    setFeed(null);
-    setError('');
-    if (!isAuth) return;
-    const controller = new AbortController();
-    communityRequest('/feed', { token, signal: controller.signal })
-      .then((personal) => {
-        if (!controller.signal.aborted) setFeed(personal);
-      })
-      .catch((err) => {
-        if (!controller.signal.aborted) setError(err.message);
-      });
-    return () => controller.abort();
-  }, [isAuth, token, attempt]);
-
+  const { user, token, isAuth, checking } = useAuth();
+  if (checking && !user) return <p role="status">בודקים את ההתחברות…</p>;
   return (
-    <section className={styles.page}>
-      <header className={styles.pageHeader}>
-        <p className={styles.kicker}>מתכונים מאנשים שאוהבים לבשל</p>
-        <h1>קהילת המתכונים</h1>
-        <p>גלו יוצרים, עקבו אחריהם וקבלו את המתכונים החדשים שלהם בפיד האישי.</p>
-        <div className={styles.actions}>
-          {isAuth && (
-            <Link className={styles.primaryLink} to="/add">
-              פרסום מתכון
-            </Link>
-          )}
-          {user && (
-            <Link className={styles.textLink} to={`/people/${user.id}`}>
-              הפרופיל שלי
-            </Link>
-          )}
-        </div>
-      </header>
-      <section aria-labelledby="recent-heading">
-        <div className={styles.sectionHeader}>
-          <h2 id="recent-heading">חדשים בקהילה</h2>
-        </div>
-        {recentError ? (
-          <div className={styles.panel} role="alert">
-            {recentError}
-            <button onClick={() => setAttempt((value) => value + 1)}>נסו שוב</button>
-          </div>
-        ) : recent === null ? (
-          <p role="status">טוענים מתכונים מהקהילה…</p>
-        ) : discoveries.length ? (
-          <div className={styles.resultGrid}>
-            {discoveries.map((recipe) => (
-              <CommunityPost key={recipe._id} recipe={recipe} />
-            ))}
-          </div>
-        ) : (
-          <p className={styles.panel}>
-            {recent.length
-              ? 'אין כרגע מתכונים נוספים מעבר למה שמופיע בפיד שלך.'
-              : 'עדיין אין מתכונים שפורסמו בקהילה.'}
-          </p>
-        )}
-      </section>
-      <section aria-labelledby="feed-heading">
-        <div className={styles.sectionHeader}>
-          <h2 id="feed-heading">הפיד שלי</h2>
-        </div>
-        {!isAuth ? (
-          <div className={styles.panel}>
-            <Link className={styles.textLink} to="/login" state={{ from: location }}>
-              התחברו כדי לעקוב ולפתוח את הפיד שלכם
-            </Link>
-          </div>
-        ) : error ? (
-          <div className={styles.panel} role="alert">
-            {error}
-            <button onClick={() => setAttempt((value) => value + 1)}>נסו שוב</button>
-          </div>
-        ) : !feed ? (
-          <p role="status">טוענים את הפיד…</p>
-        ) : (
-          <>
-            {feed.following.length > 0 && (
-              <div className={styles.people} aria-label="פרופילים במעקב">
-                {feed.following.map((person) => (
-                  <PersonLink key={person.id} person={person} />
-                ))}
-              </div>
-            )}
-            {feed.recipes.length === 0 ? (
-              <p className={styles.panel}>הפיד יתמלא כשאנשים שבחרת לעקוב אחריהם יפרסמו מתכונים.</p>
-            ) : (
-              <div className={styles.resultGrid}>
-                {feed.recipes.map((recipe) => (
-                  <CommunityPost key={recipe._id} recipe={recipe} />
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </section>
-      <section aria-labelledby="people-heading">
-        <div className={styles.sectionHeader}>
-          <h2 id="people-heading">לגלות יוצרים</h2>
-        </div>
-        <form
-          className={styles.personSearch}
-          onSubmit={(event) => {
-            event.preventDefault();
-            setSearch(searchInput.trim());
-          }}
-        >
-          <input
-            type="search"
-            aria-label="חיפוש לפי שם או שם משתמש"
-            placeholder="שם או @שם_משתמש"
-            value={searchInput}
-            maxLength={80}
-            onChange={(event) => setSearchInput(event.target.value)}
-          />
-          <button type="submit">חיפוש</button>
-          {search && (
-            <button
-              className={styles.secondary}
-              type="button"
-              onClick={() => {
-                setSearchInput('');
-                setSearch('');
-              }}
-            >
-              ניקוי החיפוש
-            </button>
-          )}
-        </form>
-        {peopleError ? (
-          <div className={styles.panel} role="alert">
-            {peopleError}
-            <button onClick={() => setAttempt((value) => value + 1)}>נסו שוב</button>
-          </div>
-        ) : people === null ? (
-          <p role="status">טוענים את הקהילה…</p>
-        ) : people.length === 0 ? (
-          <p className={styles.panel}>
-            {search
-              ? 'לא נמצאו אנשים שמתאימים לחיפוש.'
-              : 'כאן יופיעו אנשים שבחרו שם משתמש או פרסמו מתכון.'}
-          </p>
-        ) : (
-          <div className={styles.people}>
-            {people.map((person) => (
-              <PersonLink key={person.id} person={person} />
-            ))}
-          </div>
-        )}
-      </section>
-    </section>
+    <CommunityViews
+      key={isAuth ? user.id : 'guest'}
+      user={isAuth ? user : null}
+      token={isAuth ? token : undefined}
+    />
   );
 }

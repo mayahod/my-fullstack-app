@@ -31,7 +31,8 @@ const SearchBar = ({ onSearchChange }) => {
 
       <input
         type="text"
-        placeholder="  חפש מתכון..."
+        aria-label="שם המתכון"
+        placeholder="חיפוש מתכון"
         className={styles.searchInput}
         value={searchTerm}
         onKeyDown={(event) => {

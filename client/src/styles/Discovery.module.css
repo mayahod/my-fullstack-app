@@ -39,19 +39,11 @@
   width: 100%;
   resize: vertical;
 }
-.actions,
-.sectionHeader {
+.actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-}
-.sectionHeader {
-  justify-content: space-between;
-  margin-block: 18px;
-}
-.sectionHeader h2 {
-  margin: 0;
 }
 .secondary {
   background: #faeaf0;
@@ -101,27 +93,6 @@
 .match {
   color: #4a6543;
   font-weight: 700;
-}
-.people {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.person {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: #762746;
-  background: #fff;
-  border: 1px solid #ead8de;
-  border-radius: 12px;
-  padding: 10px 16px;
-  text-decoration: none;
-  font-weight: 650;
-}
-.person .handle {
-  display: block;
-  font-size: 0.82rem;
 }
 .feedCard {
   display: flex;
@@ -304,26 +275,6 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
-.heroActions {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 20px;
-}
-.heroActions a {
-  border: 1px solid #a43c64;
-  border-radius: 12px;
-  padding: 10px 18px;
-  text-decoration: none;
-  font-weight: 700;
-  color: #842c50;
-  background: #fff;
-}
-.heroActions a:first-child {
-  background: #a43c64;
-  color: #fff;
-}
 .chatLog,
 .chatForm {
   display: grid;
@@ -372,13 +323,4 @@
 .handle {
   display: inline-block;
   color: #72515e;
-}
-.personSearch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.personSearch input {
-  flex: 1 1 200px;
 }

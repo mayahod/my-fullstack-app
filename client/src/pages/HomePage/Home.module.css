@@ -245,28 +245,28 @@
   direction: rtl;
 }
 .intro {
-  text-align: center;
-  padding: 22px 0 32px;
-}
-.intro p {
-  margin: 8px 0;
-  color: #78636e;
-}
-.intro .eyebrow {
-  color: #a43c64;
-  font-size: 0.9rem;
-  font-weight: 700;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: start;
+  padding: clamp(20px, 4vw, 34px);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(125deg, #fff9f3, #fff);
+  margin-bottom: 16px;
 }
 .headline {
-  margin: 6px 0 10px;
+  margin: 0;
   font-size: clamp(1.8rem, 4vw, 2.6rem);
   letter-spacing: -0.03em;
 }
 .topBarContainer {
   direction: rtl;
   flex-wrap: wrap;
-  gap: 20px;
-  margin: 0 0 24px;
+  gap: 10px;
+  margin: 0 0 20px;
 }
 .topBar {
   margin: 0;
@@ -312,7 +312,8 @@
   background: #863151;
 }
 .searchWrapper {
-  margin: 0 auto 32px;
+  margin: 0;
+  flex: 1 1 280px;
   width: min(100%, 480px);
 }
 .searchContainer {
@@ -397,17 +398,14 @@
   background: #a43c64;
 }
 @media (max-width: 600px) {
-  .intro {
-    padding: 12px 0 24px;
-  }
   .topBarContainer {
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
+    gap: 8px;
   }
-  .addButton {
-    align-self: stretch;
-    text-align: center;
+  .searchWrapper {
+    flex: auto;
+    width: 100%;
   }
   .topBar {
     display: grid;

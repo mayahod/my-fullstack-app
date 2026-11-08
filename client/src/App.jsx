@@ -15,7 +15,7 @@ import Community from './pages/Community/Community';
 import Profile from './pages/Community/Profile';
 
 function AppHeader() {
-  const { isAuth, logout, user } = useAuth();
+  const { isAuth, logout } = useAuth();
   const navigate = useNavigate();
 
   const onLogout = () => {
@@ -26,37 +26,38 @@ function AppHeader() {
   return (
     <header className={styles.appHeader}>
       <nav className={styles.appNav} aria-label="ניווט ראשי">
-        <NavLink to="/" className={styles.appLink}>
-          בית
-        </NavLink>
-        <NavLink to="/pantry" className={styles.appLink}>
-          מה יש במקרר?
-        </NavLink>
-        <NavLink to="/community" className={styles.appLink}>
-          קהילה
-        </NavLink>
-
-        {!isAuth && (
-          <>
-            <NavLink to="/login" className={styles.appLink}>
-              התחברות
-            </NavLink>
-            <NavLink to="/register" className={styles.appLink}>
-              הרשמה
-            </NavLink>
-          </>
-        )}
-
-        {isAuth && (
-          <>
-            <NavLink to="/dashboard" className={styles.appLink}>
-              אזור אישי
-            </NavLink>
-            <button onClick={onLogout} className={styles.appLink}>
-              התנתקות{user?.firstName ? ` (${user.firstName})` : ''}
-            </button>
-          </>
-        )}
+        <div className={styles.mainLinks}>
+          <NavLink to="/" className={styles.appLink}>
+            מתכונים
+          </NavLink>
+          <NavLink to="/community" className={styles.appLink}>
+            {isAuth ? 'הפיד שלי' : 'קהילה'}
+          </NavLink>
+          <NavLink to="/pantry" className={styles.appLink}>
+            מה יש במקרר?
+          </NavLink>
+        </div>
+        <div className={styles.accountLinks}>
+          {!isAuth ? (
+            <>
+              <NavLink to="/login" className={styles.appLink}>
+                התחברות
+              </NavLink>
+              <NavLink to="/register" className={styles.appLink}>
+                הרשמה
+              </NavLink>
+            </>
+          ) : (
+            <>
+              <NavLink to="/dashboard" className={styles.appLink}>
+                אזור אישי
+              </NavLink>
+              <button onClick={onLogout} className={styles.appLink}>
+                התנתקות
+              </button>
+            </>
+          )}
+        </div>
       </nav>
     </header>
   );

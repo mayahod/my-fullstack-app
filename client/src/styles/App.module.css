@@ -3,27 +3,21 @@
   color: #453a40;
 }
 .appHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  padding: 18px max(24px, calc((100vw - 1160px) / 2));
+  padding: 12px max(24px, calc((100vw - 1120px) / 2));
   background: #fff;
-  border-bottom: 1px solid #ecdfe4;
-  direction: rtl;
+  border-bottom: 1px solid var(--line);
 }
-.brand {
-  color: #803957;
-  text-decoration: none;
-  font-size: 1.2rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
-.appNav {
+.appNav,
+.mainLinks,
+.accountLinks {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 4px 8px;
   align-items: center;
+}
+.appNav {
+  justify-content: space-between;
+  gap: 8px 16px;
 }
 .appLink {
   color: #59434e;
@@ -38,8 +32,8 @@
   background: #f9edf2;
 }
 .appLink[aria-current='page'] {
-  background: #fae6ef;
-  color: #792849;
+  background: var(--rose-light);
+  color: var(--rose-dark);
 }
 .main {
   padding: 28px 24px 60px;
@@ -47,13 +41,10 @@
 }
 @media (max-width: 600px) {
   .appHeader {
-    padding: 16px;
-    flex-direction: column;
-    gap: 8px;
+    padding: 8px 12px;
   }
   .appNav {
     justify-content: center;
-    gap: 4px;
   }
   .appLink {
     font-size: 0.95rem;

@@ -1,0 +1,141 @@
+.page {
+  width: min(1040px, 100%);
+  margin: 0 auto;
+  text-align: start;
+}
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(20px, 4vw, 36px);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(125deg, #fff9f3, #fff);
+}
+.header h1 {
+  margin: 2px 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.2;
+}
+.header p:last-child,
+.sectionHeading p,
+.message p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+.views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 18px 0 24px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.views a {
+  flex: 1 1 auto;
+  padding: 8px 12px;
+  border-radius: 9px;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 650;
+  color: var(--muted);
+}
+.views a:hover,
+.views a[aria-current='page'] {
+  background: var(--rose-light);
+  color: var(--rose-dark);
+}
+.sectionHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-block: 20px 12px;
+}
+.sectionHeading h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.sectionHeading p {
+  flex-basis: 100%;
+}
+.posts,
+.directory {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(285px, 100%), 1fr));
+  gap: 14px;
+}
+.message,
+.personRow {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.message button {
+  margin-top: 8px;
+}
+.search {
+  display: flex;
+  gap: 8px;
+  max-width: 540px;
+  margin-bottom: 14px;
+}
+.search input {
+  flex: 1;
+}
+.directory {
+  padding: 0;
+  list-style: none;
+}
+.personRow,
+.personIdentity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.personRow {
+  justify-content: space-between;
+}
+.personIdentity {
+  color: inherit;
+  text-decoration: none;
+}
+.personIdentity:hover strong {
+  text-decoration: underline;
+}
+.personIdentity bdi {
+  display: block;
+  text-align: end;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.followButton,
+.followingButton {
+  flex-shrink: 0;
+  padding: 7px 10px;
+  min-width: 64px;
+}
+.followingButton {
+  background: var(--rose-light);
+  color: var(--rose-dark);
+}
+@media (max-width: 480px) {
+  .views {
+    gap: 3px;
+  }
+  .views a {
+    padding-inline: 7px;
+    font-size: 0.9rem;
+  }
+}

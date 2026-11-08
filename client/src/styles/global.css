@@ -1,6 +1,12 @@
 * {
   box-sizing: border-box;
 }
+:root {
+  --line: #eadce2;
+  --muted: #715d67;
+  --rose-light: #f8e5ed;
+  --rose-dark: #792849;
+}
 html {
   overflow-wrap: break-word;
 }
