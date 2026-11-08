@@ -12,6 +12,9 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(directory, '.env') });
 
 const PORT = process.env.PORT || 5001;
+const netlifyOrigin =
+  process.env.NETLIFY_ORIGIN ||
+  (process.env.RENDER ? 'https://velvety-semolina-e365c7.netlify.app' : undefined);
 const app = express();
 app.disable('x-powered-by');
 if (process.env.RENDER) app.set('trust proxy', 1);
@@ -30,7 +33,7 @@ app.use(
       process.env.APP_URL,
       process.env.RENDER_EXTERNAL_URL,
       process.env.CLIENT_URL,
-      process.env.NETLIFY_ORIGIN,
+      netlifyOrigin,
     ].filter(Boolean),
   })
 );
