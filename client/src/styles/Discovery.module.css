@@ -142,3 +142,50 @@
   background: #a43c64;
   color: #fff;
 }
+.chatLog,
+.chatForm {
+  display: grid;
+  gap: 12px;
+}
+.chatLog:empty {
+  display: none;
+}
+.chatUser,
+.chatAssistant {
+  max-width: min(680px, 100%);
+  padding: 12px 16px;
+  border-radius: 16px;
+  overflow-wrap: anywhere;
+}
+.chatUser {
+  justify-self: start;
+  background: #f8e2ea;
+}
+.chatAssistant {
+  justify-self: end;
+  background: #f3f7ee;
+}
+.chatUser p,
+.chatAssistant p {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+}
+.chatForm button {
+  justify-self: start;
+}
+.chatError {
+  color: #952348;
+}
+.handle {
+  display: inline-block;
+  color: #72515e;
+}
+.personSearch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.personSearch input {
+  flex: 1 1 200px;
+}

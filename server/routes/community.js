@@ -4,12 +4,13 @@ import { optionalAuth, requireAuth } from '../auth.js';
 import { publicRecipes } from '../controllers/recipeController.js';
 import Recipe from '../models/Recipe.js';
 import User from '../models/User.js';
+import { rateLimit } from '../rateLimit.js';
 
 const router = express.Router();
-const publicAuthor = ({ _id, firstName }) => ({ id: _id, firstName });
+const publicAuthor = ({ _id, firstName, username }) => ({ id: _id, firstName, username });
 const fail = (res) => res.status(500).json({ message: 'לא ניתן לטעון את הקהילה כרגע' });
 const notFound = (res) => res.status(404).json({ message: 'הפרופיל לא נמצא' });
-const authorFields = 'firstName';
+const authorFields = 'firstName username';
 const getFollowing = async (id) => {
   const user = await User.findById(id).select('+following').lean();
   return user?.following ?? [];
@@ -21,19 +22,69 @@ router.use((req, res, next) => {
 });
 
 router.get('/people', async (req, res) => {
+  const query = req.query.q ?? '';
+  if (typeof query !== 'string' || query.length > 80) {
+    return res.status(400).json({ message: 'מילת החיפוש אינה תקינה' });
+  }
+  const term = query
+    .trim()
+    .replace(/^@/, '')
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const search = term
+    ? {
+        $or: [
+          { username: { $regex: '^' + term, $options: 'i' } },
+          { firstName: { $regex: term, $options: 'i' } },
+        ],
+      }
+    : {};
   try {
-    const active = await Recipe.aggregate([
-      { $match: { ...publicRecipes, createdBy: { $type: 'objectId' } } },
-      { $group: { _id: '$createdBy', latest: { $max: '$createdAt' } } },
-      { $sort: { latest: -1 } },
+    const people = await User.aggregate([
+      { $match: search },
+      { $project: { firstName: 1, username: 1 } },
+      { $sort: { firstName: 1, _id: 1 } },
+      {
+        $lookup: {
+          from: Recipe.collection.name,
+          localField: '_id',
+          foreignField: 'createdBy',
+          pipeline: [{ $match: publicRecipes }, { $limit: 1 }, { $project: { _id: 1 } }],
+          as: 'published',
+        },
+      },
+      {
+        $match: { $or: [{ username: { $type: 'string' } }, { 'published.0': { $exists: true } }] },
+      },
       { $limit: 60 },
     ]);
-    const people = await User.find({ _id: { $in: active.map(({ _id }) => _id) } })
-      .select(authorFields)
-      .sort({ firstName: 1 })
-      .lean();
     res.json({ people: people.map(publicAuthor) });
   } catch {
+    return fail(res);
+  }
+});
+
+router.patch('/profile', requireAuth, rateLimit({ limit: 12 }), async (req, res) => {
+  const value = req.body?.username;
+  if (typeof value !== 'string' || value.length > 80) {
+    return res.status(400).json({ message: 'שם המשתמש אינו תקין' });
+  }
+  const username = value.trim().replace(/^@/, '').toLowerCase();
+  if (username && !/^[a-z0-9_]{3,24}$/.test(username)) {
+    return res.status(400).json({ message: 'בחרו 3–24 אותיות באנגלית, ספרות או קו תחתון' });
+  }
+  try {
+    await User.init();
+    const update = username ? { $set: { username } } : { $unset: { username: 1 } };
+    const person = await User.findByIdAndUpdate(req.user._id, update, {
+      new: true,
+      runValidators: true,
+    })
+      .select(authorFields)
+      .lean();
+    if (!person) return notFound(res);
+    res.json({ person: publicAuthor(person) });
+  } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ message: 'שם המשתמש הזה כבר תפוס' });
     return fail(res);
   }
 });
@@ -82,7 +133,8 @@ router.get('/people/:id', optionalAuth, async (req, res) => {
     ]);
     const isOwner = String(req.user?._id) === id;
     const isFollowing = following.some((authorId) => String(authorId) === id);
-    if (!person || (!recipes.length && !isOwner && !isFollowing)) return notFound(res);
+    if (!person || (!person.username && !recipes.length && !isOwner && !isFollowing))
+      return notFound(res);
     res.json({ person: publicAuthor(person), recipes, isFollowing });
   } catch {
     return fail(res);
@@ -96,10 +148,10 @@ router.put('/people/:id/follow', requireAuth, async (req, res) => {
   }
   try {
     const [person, published] = await Promise.all([
-      User.exists({ _id: id }),
+      User.findById(id).select('username').lean(),
       Recipe.exists({ ...publicRecipes, createdBy: id }),
     ]);
-    if (!person || !published) return notFound(res);
+    if (!person || (!person.username && !published)) return notFound(res);
     await User.updateOne({ _id: req.user._id }, { $addToSet: { following: person._id } });
     res.json({ isFollowing: true });
   } catch {

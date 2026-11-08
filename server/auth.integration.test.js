@@ -9,6 +9,7 @@ import bcrypt from 'bcryptjs';
 import users from './routes/userRoutes.js';
 import recipes from './routes/recipes.js';
 import community from './routes/community.js';
+import pantry from './routes/pantry.js';
 import User from './models/User.js';
 import Recipe from './models/Recipe.js';
 
@@ -25,6 +26,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
   app.use('/api/users', users);
   app.use('/api/recipes', recipes);
   app.use('/api/community', community);
+  app.use('/api/pantry', pantry);
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -347,6 +349,91 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
       );
       assert.deepEqual((await request(feedPath, 'GET', undefined, follower)).body.recipes, []);
     });
+
+    await t.test(
+      'public usernames are searchable, unique and editable only by the account owner',
+      async () => {
+        const other = await request('/api/users/login', 'POST', { email: secondEmail, password });
+        const otherToken = other.body.token;
+        const handle = 'cook_' + randomUUID().slice(0, 8);
+        const update = '/api/community/profile';
+        assert.equal((await request(update, 'PATCH', { username: handle })).status, 401);
+        assert.equal((await request(update, 'PATCH', { username: '???' }, otherToken)).status, 400);
+        const saved = await request(
+          update,
+          'PATCH',
+          { username: '@' + handle.toUpperCase() },
+          otherToken
+        );
+        assert.equal(saved.status, 200);
+        assert.equal(saved.body.person.username, handle);
+        assert.deepEqual(Object.keys(saved.body.person).sort(), ['firstName', 'id', 'username']);
+        assert.equal((await request(update, 'PATCH', { username: handle }, token)).status, 409);
+        const search = '/api/community/people?q=' + encodeURIComponent('@' + handle.slice(0, -1));
+        assert.deepEqual((await request(search)).body.people, [saved.body.person]);
+        const profile = '/api/community/people/' + saved.body.person.id;
+        assert.equal((await request(profile)).status, 200);
+        assert.equal((await request(profile + '/follow', 'PUT', undefined, token)).status, 200);
+        await request(profile + '/follow', 'DELETE', undefined, token);
+        assert.equal((await request(update, 'PATCH', { username: '' }, otherToken)).status, 200);
+        assert.deepEqual((await request(search)).body.people, []);
+        assert.equal((await request(profile)).status, 404);
+      }
+    );
+
+    await t.test(
+      'pantry chat validates turns and keeps provider credentials on the server',
+      async () => {
+        const previousKey = process.env.GEMINI_API_KEY;
+        const originalFetch = globalThis.fetch;
+        const messages = [{ role: 'user', text: 'יש לי ביצים ועגבניות' }];
+        try {
+          delete process.env.GEMINI_API_KEY;
+          assert.equal((await request('/api/pantry/status')).body.available, false);
+          assert.equal((await request('/api/pantry/chat', 'POST', { messages })).status, 503);
+          process.env.GEMINI_API_KEY = 'fixture-key';
+          let calls = 0;
+          globalThis.fetch = async (url, options) => {
+            if (!String(url).startsWith('https://generativelanguage.googleapis.com/')) {
+              return originalFetch(url, options);
+            }
+            calls++;
+            assert.equal(options.headers['x-goog-api-key'], 'fixture-key');
+            const input = JSON.parse(options.body);
+            assert.equal(input.contents[0].parts[0].text, messages[0].text);
+            assert.equal(input.contents[0].role, 'user');
+            return new Response(
+              JSON.stringify({
+                candidates: [
+                  {
+                    content: {
+                      parts: [{ thought: true, text: 'hidden' }, { text: 'שקשוקה · כ־20 דקות' }],
+                    },
+                  },
+                ],
+              })
+            );
+          };
+          assert.equal(
+            (
+              await request('/api/pantry/chat', 'POST', {
+                messages: [{ role: 'system', text: 'test' }],
+              })
+            ).status,
+            400
+          );
+          assert.equal(calls, 0);
+          const result = await request('/api/pantry/chat', 'POST', { messages });
+          assert.equal(result.status, 200);
+          assert.deepEqual(result.body, { answer: 'שקשוקה · כ־20 דקות' });
+          assert.equal(calls, 1);
+        } finally {
+          globalThis.fetch = originalFetch;
+          if (previousKey === undefined) delete process.env.GEMINI_API_KEY;
+          else process.env.GEMINI_API_KEY = previousKey;
+        }
+      }
+    );
 
     await t.test(
       'password reset reports unavailable instead of claiming an email was sent',

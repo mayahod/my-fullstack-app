@@ -13,14 +13,20 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [username, setUsername] = useState('');
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
     setProfile(null);
     setError('');
+    setNotice('');
     communityRequest(`/people/${encodeURIComponent(id)}`, { token, signal: controller.signal })
       .then((data) => {
-        if (!controller.signal.aborted) setProfile(data);
+        if (!controller.signal.aborted) {
+          setProfile(data);
+          setUsername(data.person.username ?? '');
+        }
       })
       .catch((err) => {
         if (!controller.signal.aborted) setError(err.message);
@@ -44,6 +50,29 @@ export default function Profile() {
     }
   };
 
+  const saveUsername = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const { person } = await communityRequest('/profile', {
+        token,
+        method: 'PATCH',
+        body: { username },
+      });
+      setProfile((current) =>
+        current?.person.id === person.id ? { ...current, person } : current
+      );
+      setUsername(person.username ?? '');
+      setNotice('שם המשתמש עודכן');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <section className={styles.page}>
       <Link className={styles.textLink} to="/community">
@@ -60,6 +89,13 @@ export default function Profile() {
           <header className={styles.pageHeader}>
             <p className={styles.kicker}>פרופיל בקהילה</p>
             <h1>{profile.person.firstName}</h1>
+            {profile.person.username && (
+              <p>
+                <bdi className={styles.handle} dir="ltr">
+                  @{profile.person.username}
+                </bdi>
+              </p>
+            )}
             {user?.id === profile.person.id ? (
               <Link className={styles.textLink} to="/dashboard">
                 ניהול המתכונים שלי
@@ -79,6 +115,32 @@ export default function Profile() {
               </Link>
             )}
           </header>
+          {user?.id === profile.person.id && (
+            <form className={styles.panel} onSubmit={saveUsername}>
+              <label htmlFor="profile-username">שם משתמש בקהילה</label>
+              <input
+                id="profile-username"
+                dir="ltr"
+                maxLength={25}
+                autoComplete="off"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+              />
+              <small>
+                3–24 אותיות באנגלית, ספרות או קו תחתון. שם המשתמש והשם הפרטי יופיעו בחיפוש. אפשר
+                להשאיר ריק כדי להסיר את שם המשתמש.
+              </small>
+              <div className={styles.actions}>
+                <button
+                  type="submit"
+                  disabled={busy || username === (profile.person.username ?? '')}
+                >
+                  {busy ? 'שומרים…' : 'שמירת שם משתמש'}
+                </button>
+              </div>
+              {notice && <p role="status">{notice}</p>}
+            </form>
+          )}
           <h2>מתכונים ציבוריים</h2>
           {profile.recipes.length ? (
             <div className={styles.resultGrid}>

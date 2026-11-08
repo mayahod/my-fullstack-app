@@ -1,9 +1,9 @@
 // Per-instance limits; use a shared store before scaling to multiple servers.
-export function rateLimit({ limit, windowMs = 15 * 60 * 1000 }) {
+export function rateLimit({ limit, windowMs = 15 * 60 * 1000, keyFor = (req) => req.ip }) {
   const entries = new Map();
   return (req, res, next) => {
     const now = Date.now();
-    const key = req.ip;
+    const key = keyFor(req);
     for (const [ip, entry] of entries) if (entry.until <= now) entries.delete(ip);
     let entry = entries.get(key);
     if (!entry) {

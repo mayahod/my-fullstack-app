@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import recipesRoutes from './routes/recipes.js';
 import userRoutes from './routes/userRoutes.js';
 import communityRoutes from './routes/community.js';
+import pantryRoutes from './routes/pantry.js';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(directory, '.env') });
@@ -47,6 +48,7 @@ app.use((req, res, next) => {
 app.use('/api/recipes', recipesRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/pantry', pantryRoutes);
 app.get('/api/health', (req, res) =>
   res
     .status(mongoose.connection.readyState === 1 ? 200 : 503)
