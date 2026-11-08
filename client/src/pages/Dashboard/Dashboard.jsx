@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { fetchMyRecipes, updateMyRecipe, deleteMyRecipe } from '../../services/recipes';
 import styles from './Dashboard.module.css';
+import { difficulties } from '../../data/recipeOptions';
 
 function Dashboard() {
   const { token, logout, user } = useAuth();
@@ -43,6 +44,7 @@ function Dashboard() {
       category: recipe.category,
       imageUrl: recipe.imageUrl || '',
       totalMinutes: recipe.totalMinutes ?? '',
+      difficulty: recipe.difficulty ?? '',
       isPublic: recipe.isPublic !== false,
       ingredients: recipe.ingredients.join('\n'),
       steps: recipe.steps.join('\n'),
@@ -104,6 +106,8 @@ function Dashboard() {
           <h1>אזור אישי</h1>
           <p>המתכונים שלי</p>
           {user && <Link to={`/people/${user.id}`}>הפרופיל שלי בקהילה</Link>}
+          {' · '}
+          <Link to="/library">האוספים שלי</Link>
         </div>
         <Link className={styles.primary} to="/add">
           הוספת מתכון
@@ -211,6 +215,17 @@ function Dashboard() {
                   value={form.totalMinutes}
                   onChange={change}
                 />
+              </label>
+              <label>
+                רמת קושי (לא חובה)
+                <select name="difficulty" value={form.difficulty} onChange={change}>
+                  <option value="">בחירה</option>
+                  {Object.entries(difficulties).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className={styles.visibility}>
                 <input type="checkbox" name="isPublic" checked={form.isPublic} onChange={change} />

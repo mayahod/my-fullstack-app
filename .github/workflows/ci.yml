@@ -29,8 +29,11 @@ jobs:
             server/package-lock.json
       - run: npm ci --prefix server
       - run: npm ci --prefix client
+      - run: npm ci
       - run: npm run check
       - run: npm run test:integration
         env:
           MONGO_URI: mongodb://127.0.0.1:27017/recipes_ci
           JWT_SECRET: ci-only-secret-for-disposable-test-data
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

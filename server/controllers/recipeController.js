@@ -3,6 +3,9 @@ import Recipe from '../models/Recipe.js';
 // Documents published before visibility was introduced remain public. Lean reads
 // preserve the absence of this field instead of applying the new-document default.
 export const publicRecipes = { isPublic: { $ne: false } };
+export const accessibleRecipes = (userId) => ({
+  $or: [publicRecipes, { createdBy: userId }],
+});
 const serializeRecipe = (recipe) => recipe && { ...recipe, isPublic: recipe.isPublic !== false };
 
 // GET /api/recipes
@@ -41,9 +44,8 @@ const getRandomRecipe = async (req, res) => {
 const getSingleRecipe = async (req, res) => {
   const { id } = req.params;
   try {
-    const access = [publicRecipes];
-    if (req.user) access.push({ createdBy: req.user._id });
-    const recipe = await Recipe.findOne({ _id: id, $or: access }).lean();
+    const access = req.user ? accessibleRecipes(req.user._id) : publicRecipes;
+    const recipe = await Recipe.findOne({ _id: id, ...access }).lean();
     if (!recipe) return res.status(404).json({ mssg: 'Recipe not found' });
     res.status(200).json({ recipe: serializeRecipe(recipe) });
   } catch (err) {
@@ -52,7 +54,16 @@ const getSingleRecipe = async (req, res) => {
 };
 
 const createRecipe = async (req, res) => {
-  let { title, ingredients, steps, category, imageUrl, totalMinutes, isPublic = false } = req.body;
+  let {
+    title,
+    ingredients,
+    steps,
+    category,
+    imageUrl,
+    totalMinutes,
+    difficulty,
+    isPublic = false,
+  } = req.body;
   const createdBy = req.user._id;
   if (typeof isPublic !== 'boolean')
     return res.status(400).json({ message: 'בחירת הפרטיות אינה תקינה' });
@@ -80,6 +91,7 @@ const createRecipe = async (req, res) => {
       category,
       imageUrl,
       totalMinutes,
+      difficulty: difficulty || undefined,
       isPublic,
       createdBy,
     });
@@ -116,6 +128,7 @@ const updateRecipe = async (req, res) => {
     'steps',
     'isPublic',
     'totalMinutes',
+    'difficulty',
   ];
   if (!validDuration(req.body.totalMinutes)) return invalidDuration(res);
   if (req.body.isPublic !== undefined && typeof req.body.isPublic !== 'boolean') {
@@ -132,6 +145,10 @@ const updateRecipe = async (req, res) => {
   }
   for (const key of ['title', 'category', 'imageUrl']) {
     if (typeof update[key] === 'string') update[key] = update[key].trim();
+  }
+  if (update.difficulty === '') {
+    delete update.difficulty;
+    update.$unset = { difficulty: 1 };
   }
   if (
     ['ingredients', 'steps'].some(

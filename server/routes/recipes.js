@@ -1,5 +1,6 @@
 import express from 'express';
 import { requireAuth, optionalAuth } from '../auth.js';
+import { catalog } from '../controllers/catalogController.js';
 import {
   createRecipe,
   getAllRecipes,
@@ -26,6 +27,7 @@ router.get('/', getAllRecipes);
 // Named routes must precede /:id so they are not interpreted as recipe IDs.
 router.get('/random', getRandomRecipe);
 router.get('/mine', requireAuth, getMyRecipes);
+router.get('/catalog', catalog);
 
 // GET a single recipe
 router.get('/:id', optionalAuth, getSingleRecipe);

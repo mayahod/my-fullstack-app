@@ -10,6 +10,8 @@ import users from './routes/userRoutes.js';
 import recipes from './routes/recipes.js';
 import community from './routes/community.js';
 import pantry from './routes/pantry.js';
+import library from './routes/library.js';
+import Collection from './models/Collection.js';
 import User from './models/User.js';
 import Recipe from './models/Recipe.js';
 
@@ -27,6 +29,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
   app.use('/api/recipes', recipes);
   app.use('/api/community', community);
   app.use('/api/pantry', pantry);
+  app.use('/api/library', library);
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -285,6 +288,73 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
       await request(`/api/recipes/${legacyId}`, 'PATCH', { isPublic: false }, token);
       assert.equal((await request(`/api/recipes/${legacyId}`)).status, 404);
     });
+    await t.test('catalog filters and library membership respect recipe visibility', async () => {
+      const second = await request('/api/users/login', 'POST', { email: secondEmail, password });
+      assert.equal(second.status, 200);
+      const other = second.body.token;
+      const marker = randomUUID().slice(0, 12);
+      const recipePayload = {
+        title: 'Catalog ' + marker,
+        category: 'מרק',
+        difficulty: 'easy',
+        totalMinutes: 20,
+        ingredients: ['עגבניות ' + marker, 'בצל'],
+        steps: ['מבשלים'],
+      };
+      const published = (
+        await request('/api/recipes', 'POST', { ...recipePayload, isPublic: true }, token)
+      ).body.recipe;
+      const secondPublic = (
+        await request('/api/recipes', 'POST', { ...recipePayload, isPublic: true }, token)
+      ).body.recipe;
+      const privateRecipe = (await request('/api/recipes', 'POST', recipePayload, token)).body
+        .recipe;
+      const catalog =
+        '/api/recipes/catalog?ingredients=' +
+        marker +
+        ',בצל&difficulty=easy&maxMinutes=25&pageSize=1';
+      const firstPage = (await request(catalog)).body;
+      const nextPage = (await request(catalog + '&page=2')).body;
+      assert.equal(firstPage.total, 2);
+      assert.deepEqual(
+        new Set([firstPage.recipes[0]._id, nextPage.recipes[0]._id]),
+        new Set([published._id, secondPublic._id])
+      );
+      const matches = (
+        await request('/api/recipes/catalog?sort=match&ingredients=' + marker + ',עגבניות')
+      ).body;
+      assert.deepEqual(matches.recipes[0].matchedIngredients, [marker, 'עגבניות']);
+      assert.ok(!matches.recipes.some((recipe) => recipe._id === privateRecipe._id));
+      assert.equal((await request('/api/recipes/catalog?pageSize=500')).status, 400);
+      assert.equal((await request('/api/library')).status, 401);
+      const favorites = '/api/library/collections/favorites/recipes/';
+      assert.equal(
+        (await request(favorites + privateRecipe._id, 'PUT', undefined, other)).status,
+        404
+      );
+      const saved = await Promise.all([
+        request(favorites + published._id, 'PUT', undefined, other),
+        request(favorites + published._id, 'PUT', undefined, other),
+      ]);
+      assert.ok(saved.every(({ status }) => status === 200));
+      assert.equal(
+        (await request('/api/library', 'GET', undefined, other)).body.collections[0].recipes.length,
+        1
+      );
+      const custom = (
+        await request('/api/library/collections', 'PUT', { name: 'Quick meals' }, other)
+      ).body;
+      const membership = '/api/library/collections/' + custom.id + '/recipes/' + published._id;
+      assert.equal((await request(membership, 'PUT', undefined, token)).status, 404);
+      assert.equal((await request(membership, 'PUT', undefined, other)).status, 200);
+      await request('/api/recipes/' + published._id, 'PATCH', { isPublic: false }, token);
+      assert.ok(
+        (await request('/api/library', 'GET', undefined, other)).body.collections.every(
+          ({ recipes }) => recipes.length === 0
+        )
+      );
+    });
+
     await t.test('following is idempotent and feeds contain only public recipes', async () => {
       const other = await request('/api/users/login', 'POST', { email: secondEmail, password });
       const follower = other.body.token;
@@ -640,6 +710,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
   } finally {
     // Remove only records created by this run, including on assertion failure.
     const testUsers = await User.find({ email: { $in: [email, secondEmail] } }).select('_id');
+    await Collection.deleteMany({ owner: { $in: testUsers.map((user) => user._id) } });
     await Recipe.deleteMany({ createdBy: { $in: testUsers.map((user) => user._id) } });
     await User.deleteMany({ email: { $in: [email, secondEmail] } });
     await new Promise((resolve) => server.close(resolve));

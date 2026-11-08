@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { FaCheckCircle, FaTimesCircle, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { difficulties } from '../../data/recipeOptions';
 
 const AddRecipe = () => {
   const { token } = useAuth();
@@ -16,6 +17,7 @@ const AddRecipe = () => {
     category: '',
     imageUrl: '',
     totalMinutes: '',
+    difficulty: '',
     isPublic: false,
   });
 
@@ -117,6 +119,20 @@ const AddRecipe = () => {
           onChange={handleChange}
         />
 
+        <label htmlFor="recipe-difficulty">רמת קושי (לא חובה)</label>
+        <select
+          id="recipe-difficulty"
+          name="difficulty"
+          value={formData.difficulty}
+          onChange={handleChange}
+        >
+          <option value="">בחירה</option>
+          {Object.entries(difficulties).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
         <label className={styles.visibility}>
           <input
             type="checkbox"

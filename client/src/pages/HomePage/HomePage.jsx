@@ -1,167 +1,188 @@
-import { useEffect, useState, useMemo } from 'react';
-import styles from './Home.module.css';
-import { fetchRecipes } from '../../services/recipes';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import RecipeCard from '../../components/RecipeCard';
-import SearchBar from '../../components/common/SearchBar';
-import { Link } from 'react-router-dom';
 import { featuredRecipes } from '../../data/featuredRecipes';
+import { categories, difficulties } from '../../data/recipeOptions';
+import { searchRecipes } from '../../services/recipes';
+import styles from './Home.module.css';
 
-const HomePage = () => {
-  const [liveRecipes, setLiveRecipes] = useState(null);
-  const recipes = liveRecipes ?? featuredRecipes;
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOption, setSortOption] = useState('default');
-  const [filterOption, setFilterOption] = useState('all');
+function CatalogFilters({ params, onSubmit }) {
+  return (
+    <form
+      className={styles.catalogFilters}
+      onSubmit={onSubmit}
+      role="search"
+      aria-label="חיפוש מתכונים"
+    >
+      <label className={styles.catalogSearch}>
+        חיפוש לפי שם או מצרך
+        <input
+          type="search"
+          name="q"
+          defaultValue={params.get('q') || params.get('query') || ''}
+          placeholder="למשל פסטה או עגבניות"
+          maxLength={160}
+        />
+      </label>
+      <label>
+        מצרכים נוספים
+        <input
+          name="ingredients"
+          defaultValue={params.get('ingredients') || ''}
+          placeholder="מופרדים בפסיקים"
+          maxLength={160}
+        />
+      </label>
+      <label>
+        קטגוריה
+        <select name="category" defaultValue={params.get('category') || ''}>
+          <option value="">הכול</option>
+          {categories.map((category) => (
+            <option key={category}>{category}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        זמן מרבי בדקות
+        <input
+          name="maxMinutes"
+          type="number"
+          min="1"
+          max="1440"
+          defaultValue={params.get('maxMinutes') || ''}
+          placeholder="ללא הגבלה"
+        />
+      </label>
+      <label>
+        רמת קושי
+        <select name="difficulty" defaultValue={params.get('difficulty') || ''}>
+          <option value="">הכול</option>
+          <option value="unrated">לא צוינה</option>
+          {Object.entries(difficulties).map(([key, value]) => (
+            <option key={key} value={key}>
+              {value}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        מיון
+        <select name="sort" defaultValue={params.get('sort') || 'newest'}>
+          <option value="newest">חדשים קודם</option>
+          <option value="oldest">ישנים קודם</option>
+          <option value="name">שם (א-ת)</option>
+          <option value="nameDesc">שם (ת-א)</option>
+          <option value="quickest">המהירים ביותר</option>
+        </select>
+      </label>
+      <div className={styles.catalogActions}>
+        <button type="submit">חיפוש</button>
+        <Link to="/">איפוס</Link>
+      </div>
+    </form>
+  );
+}
+
+export default function HomePage() {
+  const [params, setParams] = useSearchParams();
+  const [result, setResult] = useState(null);
   const [attempt, setAttempt] = useState(0);
-  const [slow, setSlow] = useState(false);
+  const query = params.toString();
+  const current = result?.query === query ? result : null;
+  const data = current?.data;
+  const list = data?.recipes ?? (query ? [] : featuredRecipes);
 
   useEffect(() => {
-    let active = true;
-    setIsLoading(true);
-    setError(null);
-    setSlow(false);
-    const timer = setTimeout(() => {
-      if (active) setSlow(true);
-    }, 8000);
-    fetchRecipes()
+    const controller = new AbortController();
+    const options = new URLSearchParams(query);
+    if (options.has('query') && !options.has('q')) options.set('q', options.get('query'));
+    options.delete('query');
+    searchRecipes(options, controller.signal)
       .then((data) => {
-        if (!active) return;
-        const list = Array.isArray(data) ? data : (data?.recipes ?? []);
-        setLiveRecipes(list);
+        if (!controller.signal.aborted) setResult({ query, data });
       })
-      .catch(() => {
-        if (active) setError('לא ניתן לטעון את המתכונים כרגע. בדקו את החיבור ונסו שוב.');
-      })
-      .finally(() => {
-        clearTimeout(timer);
-        if (active) setIsLoading(false);
+      .catch((error) => {
+        if (!controller.signal.aborted) setResult({ query, error: error.message });
       });
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [attempt]);
+    return () => controller.abort();
+  }, [query, attempt]);
 
-  const handleSearchChange = (term) => setSearchTerm(term);
-
-  const filteredRecipes = useMemo(() => {
-    let list = recipes;
-
-    if (filterOption !== 'all') {
-      list = list.filter((r) => r.category?.trim() === filterOption.trim());
+  function submit(event) {
+    event.preventDefault();
+    const next = new URLSearchParams();
+    for (const [key, value] of new FormData(event.currentTarget)) {
+      if (value.trim() && (key !== 'sort' || value !== 'newest')) next.set(key, value.trim());
     }
+    setParams(next);
+  }
 
-    if (sortOption === 'name') {
-      list = [...list].sort((a, b) => a.title.localeCompare(b.title, 'he'));
-    } else if (sortOption === 'nameDesc') {
-      list = [...list].sort((a, b) => b.title.localeCompare(a.title, 'he'));
-    } else if (sortOption === 'newest') {
-      list = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (sortOption === 'oldest') {
-      list = [...list].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    }
-
-    return list;
-  }, [recipes, sortOption, filterOption]);
-
-  const searchSuggestions = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    if (!q) return [];
-    return recipes.filter((r) => r.title?.toLowerCase().includes(q));
-  }, [recipes, searchTerm]);
+  function page(number) {
+    const next = new URLSearchParams(params);
+    if (number === 1) next.delete('page');
+    else next.set('page', String(number));
+    setParams(next);
+  }
 
   return (
-    <div className={styles.home}>
-      <div className={styles.intro}>
-        <h1 className={styles.headline}>כל המתכונים</h1>
-        <Link to="/add" className={styles.addButton}>
-          הוספת מתכון
-        </Link>
-      </div>
-      <div className={styles.topBarContainer}>
-        <div className={styles.searchWrapper}>
-          <SearchBar onSearchChange={handleSearchChange} />
-
-          {searchSuggestions.length > 0 && (
-            <ul className={styles.suggestions} role="listbox">
-              {searchSuggestions.slice(0, 5).map((recipe) => (
-                <li key={recipe._id}>
-                  <Link to={`/recipes/${recipe._id}`} className={styles.suggestionItem}>
-                    {recipe.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {searchTerm.trim() && liveRecipes && searchSuggestions.length === 0 && (
-            <div className={styles.suggestions}>
-              <div className={styles.noResultsRow}>לא נמצאו תוצאות</div>
-            </div>
-          )}
+    <section className={styles.home}>
+      <header className={styles.intro}>
+        <div>
+          <p className={styles.eyebrow}>מבשלים בבית</p>
+          <h1 className={styles.headline}>כל המתכונים</h1>
         </div>
-        <div className={styles.topBar}>
-          <div className={styles.filterButton}>
-            <label htmlFor="filter" className={styles.filterLabel}>
-              סינון לפי:
-            </label>
-            <select
-              id="filter"
-              value={filterOption}
-              onChange={(e) => setFilterOption(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="all">הכול</option>
-              <option value="פסטה">פסטה</option>
-              <option value="מרק">מרק</option>
-              <option value="סלט">סלט</option>
-              <option value="לחם">לחם</option>
-              <option value="קינוח">קינוח</option>
-            </select>
-          </div>
-
-          <div className={styles.sortButton}>
-            <label htmlFor="sort" className={styles.sortLabel}>
-              מיון לפי:
-            </label>
-            <select
-              id="sort"
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-              className={styles.sortSelect}
-            >
-              <option value="default">ללא</option>
-              <option value="name">שם (א-ת)</option>
-              <option value="nameDesc">שם (ת-א)</option>
-              <option value="newest">החדשים ביותר</option>
-              <option value="oldest">הישנים ביותר</option>
-            </select>
-          </div>
+        <div className={styles.catalogActions}>
+          <Link to="/demo">התנסות בלי הרשמה</Link>
+          <Link to="/add" className={styles.addButton}>
+            הוספת מתכון
+          </Link>
         </div>
-      </div>
-
-      {isLoading && slow && (
-        <p role="status">בינתיים אפשר לפתוח את המתכונים המוצגים. הרשימה המלאה עדיין נטענת.</p>
-      )}
-      {error && (
+      </header>
+      <CatalogFilters key={query} params={params} onSubmit={submit} />
+      {current?.error ? (
         <div className={styles.status} role="alert">
-          <p>{error}</p>
-          <button onClick={() => setAttempt((value) => value + 1)}>נסו שוב</button>
+          <p>{current.error}</p>
+          <button
+            onClick={() => {
+              setResult(null);
+              setAttempt((value) => value + 1);
+            }}
+          >
+            נסו שוב
+          </button>
         </div>
+      ) : !current ? (
+        <p className={styles.catalogStatus} role="status">
+          {list.length ? 'מציגים מתכונים נבחרים בזמן שהקטלוג נטען…' : 'מחפשים מתכונים…'}
+        </p>
+      ) : data.total ? (
+        <p className={styles.catalogStatus} role="status">
+          {data.total} מתכונים נמצאו
+        </p>
+      ) : null}
+      {data && !list.length && (
+        <p className={styles.status}>לא נמצאו מתכונים. אפשר לשנות את החיפוש או להסיר סינון.</p>
       )}
-      {liveRecipes && filteredRecipes.length === 0 ? (
-        <p className={styles.status}>לא נמצאו מתכונים בסינון שבחרת</p>
-      ) : (
-        <div className={styles.grid}>
-          {filteredRecipes.map((recipe, index) => (
-            <RecipeCard key={recipe._id} recipe={recipe} eager={index < 2} />
-          ))}
-        </div>
+      <div className={styles.grid}>
+        {list.map((recipe, index) => (
+          <RecipeCard key={recipe._id} recipe={recipe} eager={index < 2} />
+        ))}
+      </div>
+      {data && (data.total > data.pageSize || data.page > 1) && (
+        <nav className={styles.pagination} aria-label="עמודי מתכונים">
+          <button disabled={data.page === 1} onClick={() => page(data.page - 1)}>
+            הקודם
+          </button>
+          <span>
+            עמוד {data.page} מתוך {Math.max(1, Math.ceil(data.total / data.pageSize))}
+          </span>
+          <button
+            disabled={data.page * data.pageSize >= data.total || data.page >= 500}
+            onClick={() => page(data.page + 1)}
+          >
+            הבא
+          </button>
+        </nav>
       )}
-    </div>
+    </section>
   );
-};
-
-export default HomePage;
+}

@@ -5,6 +5,8 @@ import { API_BASE } from '../../services/config';
 import { useAuth } from '../../context/AuthContext';
 import RecipeDiscussion from './RecipeDiscussion';
 import { featuredRecipes } from '../../data/featuredRecipes';
+import { difficulties } from '../../data/recipeOptions';
+import RecipeSave from '../../components/RecipeSave';
 
 const displayText = (value) => value.replace(/[\u05be\u2012-\u2015]/g, '-');
 
@@ -52,9 +54,11 @@ function RecipePage() {
             <p className={styles.category}>{recipe.category}</p>
             <h1 className={styles.title}>{recipe.title}</h1>
             {recipe.totalMinutes && <p>זמן כולל משוער: כ-{recipe.totalMinutes} דקות</p>}
+            {difficulties[recipe.difficulty] && <p>רמת קושי · {difficulties[recipe.difficulty]}</p>}
             {recipe.isPublic && recipe.createdBy && (
               <Link to={`/people/${recipe.createdBy}`}>לפרופיל היוצר</Link>
             )}
+            {!featured && <RecipeSave key={id + ':' + (token || '')} id={id} />}
           </header>
           {recipe.imageUrl && (
             <img src={recipe.imageUrl} alt={recipe.title} className={styles.image} />

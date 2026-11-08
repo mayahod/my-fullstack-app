@@ -1,26 +1,47 @@
-# ספר המתכונים שלנו
+# Recipe Book
 
-אתר מתכונים בעברית, עם חיפוש, סינון, הרשמה ואזור אישי לניהול המתכונים שהוספתם.
+A Hebrew-language recipe sharing platform built by Maya Hod with React, Node.js, Express, and MongoDB. Browse public recipes, follow home cooks, and ask an AI cooking assistant what you can make with the ingredients you already have.
 
-**[לאתר הפעיל](https://my-fullstack-app-tf48.onrender.com/)** · [מדריך פריסה](DEPLOYMENT.md) · [מבנה המערכת](docs/ARCHITECTURE.md) · [תיעוד API](docs/API.md)
+**[Live site](https://velvety-semolina-e365c7.netlify.app/)** · [Try without an account](https://velvety-semolina-e365c7.netlify.app/demo) · [Community](https://velvety-semolina-e365c7.netlify.app/community) · [Pantry assistant](https://velvety-semolina-e365c7.netlify.app/pantry) · [Architecture](docs/ARCHITECTURE.md) · [API reference](docs/API.md)
 
-## מה יש בפרויקט
+![The Hebrew recipe catalog with combined filters and recipe photos](docs/media/catalog.jpg)
 
-- **מה יש במקרר?** צ׳אט שמציע מנה, זמן הכנה ושלבים לפי המצרכים בבית. שיחת דוגמה זמינה גם בלי מפתח Gemini.
-- **קהילה** עם שמות משתמש, חיפוש אנשים, פרופילים, מעקב ופיד אישי של מתכונים ציבוריים.
+## Try it
 
-- צפייה במתכונים וחיפוש לפי שם, סינון לפי קטגוריה ומיון.
-- הרשמה והתחברות, עם שחזור התחברות לאחר רענון.
-- אזור אישי להוספה, עריכה ומחיקה של מתכונים בבעלות המשתמש.
-- מתכונים חדשים פרטיים כברירת מחדל; אפשר לפרסם לכולם ולחזור לפרטי בעריכה. תמונה אינה חובה.
-- איפוס סיסמה במייל עם קישור חד-פעמי שפג אחרי 30 דקות.
-- ממשק מימין לשמאל ופריסה מותאמת למסכים צרים.
+- **Browse the recipe catalog.** Combine name, ingredient, category, time, and difficulty filters. Results are paginated and can be sorted by date, name, or preparation time. Featured recipes are bundled with the site so visitors can open them while the live catalog loads.
+- **Try the demo.** Add and edit a sample recipe, save it to favorites, and view your saved recipes. Demo changes stay in the current page session.
+- **Explore the community without signing up.** Open a labeled demo profile to see its public recipes. Sign in to follow creators, see their posts in your feed, and leave likes or comments.
+- **Use what you have.** Find public recipes ranked by matching ingredients, or ask the pantry assistant for an original suggestion with an estimated cooking time and instructions.
 
-הלקוח נכתב ב-React ו-Vite; השרת ב-Express ו-Mongoose, עם MongoDB לאחסון הנתונים. בייצור שרת אחד מגיש את האתר ואת ה-API.
+![Adding a recipe and saving it to favorites without signing in](docs/media/demo.gif)
 
-## הפעלה מקומית
+## What I built
 
-נדרשים Node.js 22, npm וכתובת חיבור למסד MongoDB נגיש.
+- **Recipe management.** A personal dashboard for creating, editing, deleting, and publishing recipes. New recipes start private, and a photo and preparation time are optional.
+- **Accounts and permissions.** Registration, sign-in, and email-based password reset. The API checks ownership on private reads and edits. Reset links expire after 30 minutes and can only be used once.
+- **Community features.** Searchable usernames, profile photos, following, a personalized feed, public discovery, and discussions. MongoDB updates keep a like unique per user and a follow unique per account pair.
+- **Pantry chat.** The Express API validates conversation turns, limits requests, and calls Gemini using a server-side key. The React interface renders headings, lists, and emphasis in its replies.
+- **Saved recipes and meal planning.** Members can save recipes to favorites or named collections. The weekly planner combines compatible quantities into a shopping list and stores the plan in the current browser.
+- **Testing and delivery.** GitHub Actions runs formatting, lint, unit tests, a production build, integration tests against a disposable MongoDB instance, and Playwright browser tests. Netlify serves the frontend, and Render runs the API.
+
+The project started from a QueenB starter template.
+
+## How it fits together
+
+```mermaid
+flowchart LR
+    Browser["Browser"] --> UI["React app · Netlify"]
+    UI --> API["Express API · Render"]
+    API --> DB[("MongoDB Atlas")]
+    API --> Gemini["Gemini API"]
+    API --> Brevo["Brevo email"]
+```
+
+The static frontend can open independently of the API. Live data and signed-in actions can take longer on the first request if the free Render service is waking up. The [architecture notes](docs/ARCHITECTURE.md) explain the tradeoffs around session storage, recipe privacy, and hosting. The [deployment guide](DEPLOYMENT.md) covers hosting and provider configuration.
+
+## Run locally
+
+Use Node.js 22, npm, and a MongoDB instance.
 
 ```sh
 git clone https://github.com/mayahod/my-fullstack-app.git
@@ -29,62 +50,20 @@ npm ci --prefix server
 npm ci --prefix client
 ```
 
-העתיקו את `server/.env.example` אל `server/.env` ומלאו `MONGO_URI` ו-`JWT_SECRET` אקראי וחזק. ברירת המחדל של השרת היא פורט 5001; הלקוח בפורט 3002. אם Vite בוחר פורט אחר, עדכנו את `CLIENT_URL` ואת `APP_URL` בהתאם.
+Copy [server/.env.example](server/.env.example) to `server/.env` and set `MONGO_URI` and a random `JWT_SECRET`. Configure `GEMINI_API_KEY` for live chat and the email settings for password-reset delivery. Both integrations are optional for local browsing and recipe management.
 
-בשני חלונות טרמינל נפרדים:
+Run `npm run dev:server` and `npm run dev:client` in separate terminals, then open the address printed by Vite. By default, Vite serves port 3002 and proxies `/api` to port 5001. Keep provider keys in server environment variables.
 
-```sh
-npm run dev:server
-```
+## Verify
 
-```sh
-npm run dev:client
-```
+| Command                    | What it checks                                                                                                        |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `npm run check`            | Formatting, lint, unit tests, and the frontend build                                                                  |
+| `npm run test:integration` | Account and session flows, recipe permissions, community interactions, password resets, and pantry request validation |
+| `npm run test:e2e`         | Browser flows for the demo, login, search, saving a recipe, meal planning, and pantry matches                         |
 
-פתחו את הכתובת ש-Vite מציג. הוא מעביר בקשות `/api` אל השרת המקומי. בדרך כלל אין צורך בקובץ סביבה בלקוח: `VITE_API_URL` נשאר ריק. אם מגדירים שרת נפרד, הערך הוא ה-origin בלבד, ללא `/api`.
+Integration tests need `MONGO_URI` and `JWT_SECRET`. Use a dedicated test database. The suite stubs external email and AI calls, and CI uses a temporary MongoDB service.
 
-שליחת מייל מקומית אינה חובה לצפייה ולהתחברות. כדי לבדוק איפוס סיסמה אמיתי, הגדירו גם ספק מייל וכתובת שולח לפי [מדריך הפריסה](DEPLOYMENT.md).
+For browser tests, run `npm ci` from the root, install Chromium with `npx playwright install chromium`, and build the client with `npm run build --prefix client`. The browser tests use `E2E_MONGO_URI` or a separate local database named `recipes_e2e`.
 
-## פקודות תחזוקה
-
-כל הפקודות הבאות רצות מתיקיית השורש:
-
-| פקודה                      | תפקיד                                                          |
-| -------------------------- | -------------------------------------------------------------- |
-| `npm run check`            | בדיקת פורמט, lint, בדיקות יחידה ובניית לקוח                    |
-| `npm test`                 | בדיקות יחידה של התחברות, מטמון מתכונים, מיילים והגבלת ניסיונות |
-| `npm run test:integration` | בדיקת הרשמה, הרשאות ואיפוס מול MongoDB                         |
-| `npm run format`           | סידור הקוד והתיעוד לפי Prettier                                |
-| `npm run build`            | התקנת תלויות ובניית האתר לפריסה                                |
-| `npm start`                | הפעלת השרת; בייצור הוא מגיש גם את הלקוח הבנוי                  |
-
-בדיקות היחידה אינן דורשות מסד נתונים ואינן שולחות מייל אמיתי. בדיקת האינטגרציה דורשת `MONGO_URI` ו-`JWT_SECRET`: מומלץ להשתמש במסד נפרד לבדיקות. היא יוצרת משתמשים עם כתובות אקראיות תחת `example.test` ומנקה את הנתונים שלה בסיום. ב-GitHub Actions הבדיקה רצה מול MongoDB זמני, ללא גישה למסד האתר.
-
-## מבנה התיקיות
-
-```text
-client/src/
-  components/       רכיבים משותפים והגנה על נתיבים
-  context/          מצב התחברות ותוקף ההתחברות
-  pages/            בית, מתכון, חיפוש, אזור אישי וטופסי חשבון
-  services/         חיבור ל-API ומטמון הרשימה הציבורית
-  styles/           סגנונות כלליים ומבנה האתר
-server/
-  controllers/      טיפול בבקשות חשבון ומתכונים
-  models/           סכמות MongoDB
-  routes/           נתיבי API וחיבור הרשאות
-  services/         שליחת מיילים ובדיקות ספקים
-  auth.js           אימות JWT ובדיקת גרסת סיסמה
-  rateLimit.js      הגבלת ניסיונות לפי כתובת IP
-  server.js         הגדרת Express והפעלת החיבור למסד
-```
-
-## עבודה על הקוד
-
-- שמרו את ה-CSS של כל מסך ב-CSS Module; סגנונות גלובליים שייכים ל-`global.css` בלבד.
-- כתבו עברית בסדר טבעי וסימני פיסוק בסוף המחרוזת. המסמך כבר מוגדר `dir="rtl"`.
-- הוסיפו הערות להסבר החלטות ומגבלות; קוד שהוחלף נשמר בהיסטוריית Git ולא בהערות.
-- הריצו `npm run format` ואז `npm run check` לפני העלאה.
-- אל תכניסו סיסמאות, קישורי איפוס, מפתחות API או קובצי `.env` ל-Git. קובצי הדוגמה מכילים מצייני מקום בלבד.
-
-הפרויקט התחיל מתבנית הלימוד של QueenB ועובד לאתר מתכונים. קרדיטים לתמונות נמצאים ב-`client/public/images/photo-credits.json`.
+[Photo credits](client/public/images/photo-credits.json)

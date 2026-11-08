@@ -3,6 +3,31 @@
   margin: 0 auto;
   text-align: start;
 }
+.page > .panel + .panel {
+  margin-block-start: 16px;
+}
+.recipeSave {
+  margin-block-start: 14px;
+}
+.weekPlan {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: 12px;
+}
+.weekPlan label {
+  display: grid;
+  gap: 4px;
+}
+.shoppingList {
+  margin: 0;
+  padding-inline-start: 22px;
+}
+.demoList {
+  margin-block-start: 18px;
+}
+.demoList article h3 {
+  margin: 0;
+}
 .pageHeader {
   padding: clamp(24px, 5vw, 52px);
   border: 1px solid #ead8de;

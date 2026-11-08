@@ -8,14 +8,14 @@ import recipesRoutes from './routes/recipes.js';
 import userRoutes from './routes/userRoutes.js';
 import communityRoutes from './routes/community.js';
 import pantryRoutes from './routes/pantry.js';
+import libraryRoutes from './routes/library.js';
+import { publicFrontend } from './publicFrontend.js';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(directory, '.env') });
 
 const PORT = process.env.PORT || 5001;
-const netlifyOrigin =
-  process.env.NETLIFY_ORIGIN ||
-  (process.env.RENDER ? 'https://velvety-semolina-e365c7.netlify.app' : undefined);
+const netlifyOrigin = publicFrontend();
 const app = express();
 app.disable('x-powered-by');
 if (process.env.RENDER) app.set('trust proxy', 1);
@@ -49,6 +49,7 @@ app.use('/api/recipes', recipesRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/pantry', pantryRoutes);
+app.use('/api/library', libraryRoutes);
 app.get('/api/health', (req, res) =>
   res
     .status(mongoose.connection.readyState === 1 ? 200 : 503)
@@ -58,8 +59,13 @@ app.use('/api', (req, res) => res.status(404).json({ message: 'הכתובת לא
 
 if (process.env.NODE_ENV === 'production') {
   const clientPath = path.resolve(directory, '../client/dist');
-  app.use(express.static(clientPath));
-  app.get('*', (req, res) => res.sendFile(path.join(clientPath, 'index.html')));
+  app.use(express.static(clientPath, { index: false }));
+  app.get('*', (req, res) => {
+    if (process.env.RENDER && netlifyOrigin) {
+      return res.redirect(302, new URL(netlifyOrigin).origin + req.originalUrl);
+    }
+    return res.sendFile(path.join(clientPath, 'index.html'));
+  });
 }
 app.use((error, req, res, next) => {
   res

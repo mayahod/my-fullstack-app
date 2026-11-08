@@ -1,10 +1,10 @@
 # פריסה, הגדרות ומיילים
 
-הפרויקט נפרס כשירות Node אחד ב-Render. אותו origin מגיש את האתר ואת ה-API, כך שהקישור הציבורי עובד גם כשהמחשב המקומי כבוי.
+הממשק הציבורי נפרס ב-Netlify, וה-API רץ ב-Render ומתחבר ל-MongoDB. מתכונים נבחרים ומסך ההדגמה זמינים לפני שה-API מגיב.
 
 ## השירות הקיים
 
-המאגר הוא `mayahod/my-fullstack-app`, ענף `main`. האתר הפעיל: [my-fullstack-app-tf48.onrender.com](https://my-fullstack-app-tf48.onrender.com/).
+המאגר הוא `mayahod/my-fullstack-app`, ענף `main`. [כתובת האתר הציבורית ב-Netlify](https://velvety-semolina-e365c7.netlify.app/). כתובות העמודים הישנות ב-Render מפנות לאתר הציבורי לאחר שהשירות מתעורר.
 
 השירות הקיים נוצר דרך לוח הבקרה, עם Build: `npm run build` ו-Start: `npm start`. דחיפה ל-`main` מפעילה פריסה אוטומטית. `render.yaml` הוא תבנית לשירות חדש; שינויו אינו מעדכן אוטומטית שירות שנוצר ידנית.
 
@@ -32,7 +32,7 @@
 | `NODE_ENV`            | `production` בפריסה; מפעיל הגשת `client/dist`        |
 | `PORT`                | מוגדר ב-Render אוטומטית; מקומית ברירת המחדל היא 5001 |
 | `APP_URL`             | origin ציבורי לקישורי איפוס; אופציונלי ב-Render      |
-| `RENDER_EXTERNAL_URL` | חלופה אוטומטית ל-`APP_URL` ב-Render                  |
+| `RENDER_EXTERNAL_URL` | חלופה אם לא הוגדר ממשק ציבורי נפרד                   |
 | `CLIENT_URL`          | origin מקומי ל-CORS ולקישורי איפוס כשאין הגדרה אחרת  |
 | `BREVO_API_KEY`       | מפתח Brevo לשליחת מיילים; מקבל קדימות על Resend      |
 | `RESEND_API_KEY`      | חלופת מייל כאשר Brevo אינו מוגדר                     |

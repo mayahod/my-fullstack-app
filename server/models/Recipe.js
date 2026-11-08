@@ -21,6 +21,7 @@ const recipesSchema = new Schema(
       validate: (value) => value == null || Number.isInteger(value),
     },
     isPublic: { type: Boolean, default: false },
+    difficulty: { type: String, enum: ['easy', 'medium', 'hard'] },
     ingredients: { type: [String], required: true },
     steps: { type: [String], required: true },
 
@@ -32,5 +33,9 @@ const recipesSchema = new Schema(
 );
 
 recipesSchema.index({ createdBy: 1, createdAt: -1 });
+recipesSchema.index({ createdAt: -1, _id: -1 });
+recipesSchema.index({ category: 1, difficulty: 1, createdAt: -1, _id: -1 });
+recipesSchema.index({ totalMinutes: 1, _id: 1 });
+recipesSchema.index({ title: 1, _id: 1 });
 
 export default mongoose.model('Recipe', recipesSchema);

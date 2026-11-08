@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, NavLink, useNavigate } from 'react-router
 import HomePage from './pages/HomePage/HomePage';
 import styles from './styles/App.module.css';
 import RecipePage from './pages/RecipePage/RecipePage';
-import SearchResultsPage from './pages/SearchResultsPage/SearchResultsPage';
 import AddRecipe from './pages/AddRecipe/AddRecipe';
 import Register from './pages/authentication/Register';
 import Login from './pages/authentication/Login';
@@ -13,6 +12,8 @@ import ResetPassword from './pages/authentication/ResetPassword';
 import Pantry from './pages/Pantry/Pantry';
 import Community from './pages/Community/Community';
 import Profile from './pages/Community/Profile';
+import Demo from './pages/Demo/Demo';
+import Library from './pages/Library/Library';
 
 function AppHeader() {
   const { isAuth, logout } = useAuth();
@@ -76,7 +77,8 @@ export default function App() {
             <Route path="/community" element={<Community />} />
             <Route path="/people/:id" element={<Profile />} />
             <Route path="/recipes/:id" element={<RecipePage />} />
-            <Route path="/search" element={<SearchResultsPage />} />
+            <Route path="/search" element={<HomePage />} />
+            <Route path="/demo" element={<Demo />} />
 
             {/* עמודים פתוחים */}
             <Route path="/register" element={<Register />} />
@@ -84,6 +86,14 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* עמודים מוגנים */}
+            <Route
+              path="/library"
+              element={
+                <ProtectedRoute>
+                  <Library />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={

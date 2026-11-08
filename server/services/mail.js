@@ -1,5 +1,11 @@
+import { publicFrontend } from '../publicFrontend.js';
+
 export function publicAppUrl() {
-  const value = process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || process.env.CLIENT_URL;
+  const value =
+    process.env.APP_URL ||
+    publicFrontend() ||
+    process.env.RENDER_EXTERNAL_URL ||
+    process.env.CLIENT_URL;
   if (!value) throw new Error('APP_URL is not configured');
   const url = new URL(value);
   if (

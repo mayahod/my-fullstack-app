@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { API_BASE } from '../../services/config';
 import styles from '../../styles/Discovery.module.css';
 import CookingAnswer from './CookingAnswer';
+import IngredientMatches from './IngredientMatches';
 
 const sample = [
   { role: 'user', text: 'יש לי ביצים, עגבניות ובצל. מה אפשר להכין?' },
@@ -18,6 +19,7 @@ export default function Pantry() {
   const [error, setError] = useState('');
   const [available, setAvailable] = useState(null);
   const [showExample, setShowExample] = useState(false);
+  const chatInput = useRef(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -72,6 +74,13 @@ export default function Pantry() {
         <h1>מה יש במקרר?</h1>
         <p>ספרו מה יש בבית וקבלו רעיון למנה, זמן הכנה משוער ושלבים קצרים. אפשר גם לבקש תחליף.</p>
       </header>
+      <IngredientMatches
+        askAssistant={(ingredients) => {
+          setDraft('יש לי ' + ingredients + '. מה אפשר להכין?');
+          chatInput.current?.scrollIntoView({ block: 'center' });
+          chatInput.current?.focus({ preventScroll: true });
+        }}
+      />
       <div className={styles.panel}>
         <div className={styles.actions}>
           <button
@@ -138,6 +147,7 @@ export default function Pantry() {
           <label htmlFor="pantry-message">מה יש לך במקרר?</label>
           <textarea
             id="pantry-message"
+            ref={chatInput}
             rows={3}
             maxLength={600}
             value={draft}
