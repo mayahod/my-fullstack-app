@@ -248,6 +248,9 @@ function CommunityViews({ user, token }) {
         <section aria-labelledby="discover-heading">
           <div className={styles.sectionHeading}>
             <h2 id="discover-heading">חדשים בקהילה</h2>
+            <Link className={shared.textLink} to="/search">
+              חיפוש בכל המתכונים
+            </Link>
           </div>
           {recentPosts}
         </section>
@@ -287,8 +290,7 @@ function CommunityViews({ user, token }) {
 }
 
 export default function Community() {
-  const { user, token, isAuth, checking } = useAuth();
-  if (checking && !user) return <p role="status">בודקים את ההתחברות…</p>;
+  const { user, token, isAuth } = useAuth();
   return (
     <CommunityViews
       key={isAuth ? user.id : 'guest'}

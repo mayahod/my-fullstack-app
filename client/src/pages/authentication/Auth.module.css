@@ -1,42 +1,42 @@
 .container {
   text-align: center;
-  padding: 40px;
+  padding: 12px 0 24px;
   background-color: transparent;
   min-height: 65vh;
 }
 
 .container h1 {
-  color: #53474f;
-  margin-bottom: 30px;
+  color: var(--ink);
+  margin: 0 0 20px;
+  font-size: var(--font-title);
 }
 
 .form {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 400px;
+  text-align: start;
+  max-width: 440px;
   margin: 0 auto;
   background: #fff;
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-card);
 }
 
 .form input {
   padding: 10px 12px;
-  border: 1.5px solid #ff80aa;
+  border: 1px solid var(--line);
   border-radius: 12px;
   font-size: 1rem;
   background: #fff;
-  outline: none;
   direction: rtl;
   text-align: right;
-  color: #53474f;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--ink);
 }
 
 .primaryBtn {
-  background-color: #ff80aa;
+  background-color: var(--rose);
   color: #fff;
   border: none;
   padding: 12px;
@@ -47,7 +47,7 @@
   font-weight: bold;
 }
 .primaryBtn:hover {
-  background-color: #ff6699;
+  background-color: var(--rose-dark);
 }
 
 .popup {
@@ -153,7 +153,7 @@
 .linkBtn {
   background: none !important;
   border: none !important;
-  color: #ff6699;
+  color: var(--rose-dark);
   font-weight: 700;
   cursor: pointer;
   text-decoration: underline;
@@ -164,7 +164,7 @@
 .linkBtn:active,
 .linkBtn:focus {
   background: none !important;
-  color: #ff6699;
+  color: var(--rose-dark);
   box-shadow: none !important;
 }
 

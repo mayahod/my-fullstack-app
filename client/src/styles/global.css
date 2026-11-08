@@ -2,10 +2,21 @@
   box-sizing: border-box;
 }
 :root {
-  --line: #eadce2;
-  --muted: #715d67;
-  --rose-light: #f8e5ed;
-  --rose-dark: #792849;
+  --canvas: #faf8f4;
+  --surface: #fff;
+  --surface-soft: #f3efe9;
+  --ink: #292523;
+  --muted: #685f5b;
+  --line: #e7dfd8;
+  --rose: #8b4559;
+  --rose-dark: #72364a;
+  --rose-light: #f3e7ea;
+  --error: #982c48;
+  --radius: 16px;
+  --shadow-card: 0 1px 3px #32241b0a, 0 6px 22px #32241b08;
+  --site-width: 1160px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --font-title: clamp(2rem, 4.5vw, 3.25rem);
 }
 html {
   overflow-wrap: break-word;
@@ -23,8 +34,8 @@ a {
   touch-action: manipulation;
 }
 body {
-  background: #fff0f5;
-  color: #453a40;
+  background: var(--canvas);
+  color: var(--ink);
   line-height: 1.6;
   margin: 0;
   font-family:
@@ -48,17 +59,20 @@ button {
   cursor: pointer;
 }
 :focus-visible {
-  outline: 3px solid #a43c64;
+  outline: 2px solid var(--rose);
   outline-offset: 3px;
 }
 
 button {
   border: 0;
-  border-radius: 10px;
-  background: #a43c64;
+  border-radius: 9px;
+  background: var(--rose);
   color: #fff;
   padding: 10px 16px;
   font-weight: 600;
+}
+button:where(:not(:disabled):hover) {
+  background-color: var(--rose-dark);
 }
 button:disabled {
   opacity: 0.6;
@@ -70,9 +84,17 @@ button:disabled[aria-busy='true'] {
 input,
 textarea,
 select {
-  border: 1px solid #dfcdd5;
-  border-radius: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
   padding: 10px 12px;
-  background: #fff;
-  color: #453a40;
+  background: var(--surface);
+  color: var(--ink);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+}
+a {
+  color: var(--rose-dark);
+  text-underline-offset: 0.2em;
 }

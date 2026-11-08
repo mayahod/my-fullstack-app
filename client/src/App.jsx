@@ -14,6 +14,7 @@ import Community from './pages/Community/Community';
 import Profile from './pages/Community/Profile';
 import Demo from './pages/Demo/Demo';
 import Library from './pages/Library/Library';
+import { FiBookOpen } from 'react-icons/fi';
 
 function AppHeader() {
   const { isAuth, logout } = useAuth();
@@ -27,9 +28,13 @@ function AppHeader() {
   return (
     <header className={styles.appHeader}>
       <nav className={styles.appNav} aria-label="ניווט ראשי">
+        <NavLink to="/" className={styles.brand}>
+          <FiBookOpen aria-hidden="true" />
+          ספר המתכונים שלנו
+        </NavLink>
         <div className={styles.mainLinks}>
-          <NavLink to="/" className={styles.appLink}>
-            מתכונים
+          <NavLink to="/search" className={styles.appLink}>
+            חיפוש מתכונים
           </NavLink>
           <NavLink to="/community" className={styles.appLink}>
             {isAuth ? 'הפיד שלי' : 'קהילה'}

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { fetchMyRecipes, updateMyRecipe, deleteMyRecipe } from '../../services/recipes';
 import styles from './Dashboard.module.css';
 import { difficulties } from '../../data/recipeOptions';
+import RecipeImage from '../../components/RecipeImage';
 
 function Dashboard() {
   const { token, logout, user } = useAuth();
@@ -139,7 +140,7 @@ function Dashboard() {
           {recipes.map((recipe) => (
             <article className={styles.card} key={recipe._id}>
               <Link to={`/recipes/${recipe._id}`}>
-                {recipe.imageUrl && <img src={recipe.imageUrl} alt={recipe.title} loading="lazy" />}
+                <RecipeImage src={recipe.imageUrl} thumbnail />
                 <h2>{recipe.title}</h2>
               </Link>
               <p>

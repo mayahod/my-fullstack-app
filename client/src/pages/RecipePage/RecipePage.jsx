@@ -7,6 +7,8 @@ import RecipeDiscussion from './RecipeDiscussion';
 import { featuredRecipes } from '../../data/featuredRecipes';
 import { difficulties } from '../../data/recipeOptions';
 import RecipeSave from '../../components/RecipeSave';
+import RecipeImage from '../../components/RecipeImage';
+import { FiBarChart2, FiChevronRight, FiClock } from 'react-icons/fi';
 
 const displayText = (value) => value.replace(/[\u05be\u2012-\u2015]/g, '-');
 
@@ -45,7 +47,14 @@ function RecipePage() {
 
   return (
     <div className={styles.container}>
-      {error && !recipe && <p style={{ color: 'red' }}>{error}</p>}
+      <Link to="/" className={styles.back}>
+        <FiChevronRight aria-hidden="true" /> לכל המתכונים
+      </Link>
+      {error && !recipe && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
       {!recipe && !error ? (
         <p role="status">טוענים את המתכון…</p>
       ) : recipe ? (
@@ -53,18 +62,28 @@ function RecipePage() {
           <header className={styles.header}>
             <p className={styles.category}>{recipe.category}</p>
             <h1 className={styles.title}>{recipe.title}</h1>
-            {recipe.totalMinutes && <p>זמן כולל משוער: כ-{recipe.totalMinutes} דקות</p>}
-            {difficulties[recipe.difficulty] && <p>רמת קושי · {difficulties[recipe.difficulty]}</p>}
-            {recipe.isPublic && recipe.createdBy && (
-              <Link to={`/people/${recipe.createdBy}`}>לפרופיל היוצר</Link>
-            )}
+            <div className={styles.metadata}>
+              {recipe.totalMinutes > 0 && (
+                <span>
+                  <FiClock aria-hidden="true" /> כ-{recipe.totalMinutes} דקות
+                </span>
+              )}
+              {difficulties[recipe.difficulty] && (
+                <span>
+                  <FiBarChart2 aria-hidden="true" /> {difficulties[recipe.difficulty]}
+                </span>
+              )}
+              {recipe.isPublic && recipe.createdBy && (
+                <Link to={`/people/${recipe.createdBy}`}>לפרופיל היוצר</Link>
+              )}
+            </div>
             {!featured && <RecipeSave key={id + ':' + (token || '')} id={id} />}
           </header>
           {recipe.imageUrl && (
-            <img src={recipe.imageUrl} alt={recipe.title} className={styles.image} />
+            <RecipeImage src={recipe.imageUrl} alt={recipe.title} className={styles.image} eager />
           )}
           <div className={styles.content}>
-            <section>
+            <section className={styles.ingredients}>
               <h2 className={styles.subtitle}>מצרכים</h2>
               <ul className={styles.ingredientsList}>
                 {recipe.ingredients &&

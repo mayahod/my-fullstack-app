@@ -65,12 +65,36 @@ test('a signed-in visitor can find, save and plan a recipe', async ({ page, requ
     await page.getByLabel('סיסמה', { exact: true }).fill(credentials.password);
     await page.getByRole('button', { name: 'התחבר', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'הפיד שלי' })).toBeVisible();
-    await page.getByRole('link', { name: 'מתכונים', exact: true }).click();
+    let resumeSessionCheck;
+    const pendingSessionCheck = new Promise((resolve) => {
+      resumeSessionCheck = resolve;
+    });
+    await page.route(
+      '**/api/users/me',
+      async (route) => {
+        await pendingSessionCheck;
+        await route.continue();
+      },
+      { times: 1 }
+    );
+    try {
+      await page.goto('/community');
+      await expect(page.getByRole('heading', { name: 'קהילת המתכונים' })).toBeVisible();
+    } finally {
+      resumeSessionCheck();
+    }
+    await expect(page.getByRole('heading', { name: 'הפיד שלי' })).toBeVisible();
+    await page.getByRole('link', { name: 'חיפוש מתכונים', exact: true }).click();
+    const searchSection = page.getByRole('region', { name: 'חיפוש מתכונים' });
     await page.getByLabel('חיפוש לפי שם או מצרך').fill(marker);
+    await expect(page.getByLabel('סינון לפי קטגוריה')).toBeVisible();
+    await expect(page.getByLabel('מיון לפי')).toBeVisible();
+    await page.getByLabel('מיון לפי').selectOption('quickest');
     await page.getByLabel('רמת קושי').selectOption('easy');
     await page.getByLabel('זמן מרבי בדקות').fill('30');
     await page.getByRole('button', { name: 'חיפוש', exact: true }).click();
-    await page.getByRole('link', { name: new RegExp(title) }).click();
+    await expect(page).toHaveURL(/sort=quickest/);
+    await searchSection.getByRole('link', { name: new RegExp(title) }).click();
     await page.getByRole('button', { name: 'שמירת מתכון', exact: true }).click();
     await expect(page.getByRole('button', { name: 'הסרה מהאוסף', exact: true })).toBeVisible();
     await page.goto('/library');

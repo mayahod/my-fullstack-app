@@ -1,0 +1,82 @@
+.card {
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.card,
+.postCard {
+  min-width: 0;
+  overflow: hidden;
+  text-align: start;
+}
+.card a,
+.postCard a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+.card a:focus-visible,
+.postCard a:focus-visible {
+  outline-offset: -3px;
+}
+.card img,
+.postCard img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 5;
+  object-fit: cover;
+  background: var(--surface-soft) url('/images/recipe-placeholder.svg') center / cover;
+}
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 16px 16px;
+}
+.category {
+  margin: 0;
+  color: var(--rose-dark);
+  font-size: 0.79rem;
+  font-weight: 750;
+}
+.body h3 {
+  margin: 0;
+  font-size: clamp(1.06rem, 2vw, 1.2rem);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.card a:hover h3,
+.postCard a:hover h3 {
+  color: var(--rose-dark);
+}
+.metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-block-start: auto;
+  padding-block-start: 5px;
+  color: var(--muted);
+  font-size: 0.87rem;
+}
+.metadata span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.matches {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .card {
+    transition: transform 160ms ease;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+  }
+}

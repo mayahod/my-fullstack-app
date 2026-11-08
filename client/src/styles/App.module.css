@@ -1,55 +1,89 @@
 .app {
   text-align: center;
-  color: #453a40;
 }
 .appHeader {
-  padding: 12px max(24px, calc((100vw - 1120px) / 2));
-  background: #fff;
-  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 1px var(--line);
+  padding-inline: var(--gutter);
 }
-.appNav,
+.appNav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  max-width: var(--site-width);
+  min-height: 68px;
+  margin-inline: auto;
+}
+.brand,
 .mainLinks,
 .accountLinks {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
   align-items: center;
+  gap: 6px;
 }
-.appNav {
-  justify-content: space-between;
-  gap: 8px 16px;
+.brand {
+  justify-self: start;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 750;
+  text-align: start;
+  text-decoration: none;
+}
+.brand svg {
+  flex: none;
+  color: var(--rose);
+  font-size: 1.25rem;
+}
+.mainLinks,
+.accountLinks {
+  flex-wrap: wrap;
+}
+.accountLinks {
+  justify-content: end;
 }
 .appLink {
-  color: #59434e;
-  text-decoration: none;
-  font: inherit;
-  font-weight: 600;
-  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 5px 10px;
   border-radius: 8px;
   background: transparent;
+  color: var(--muted);
+  font-size: 0.91rem;
+  font-weight: 650;
+  text-decoration: none;
 }
 .appLink:hover {
-  background: #f9edf2;
+  background: var(--surface-soft);
+  color: var(--ink);
 }
 .appLink[aria-current='page'] {
   background: var(--rose-light);
   color: var(--rose-dark);
 }
 .main {
-  padding: 28px 24px 60px;
-  min-height: calc(100dvh - 80px);
+  min-height: calc(100dvh - 68px);
+  padding: clamp(24px, 4.5vw, 52px) var(--gutter) 56px;
 }
-@media (max-width: 600px) {
-  .appHeader {
-    padding: 8px 12px;
-  }
+@media (max-width: 720px) {
   .appNav {
-    justify-content: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 8px;
+    padding-block: 8px;
+  }
+  .brand {
+    font-size: 0.87rem;
+  }
+  .mainLinks {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    padding-block-start: 4px;
   }
   .appLink {
-    font-size: 0.95rem;
-  }
-  .main {
-    padding: 20px 16px 40px;
+    min-height: 38px;
+    padding-inline: 8px;
+    font-size: 0.84rem;
   }
 }

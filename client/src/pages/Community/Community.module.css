@@ -1,5 +1,5 @@
 .page {
-  width: min(1040px, 100%);
+  width: min(var(--site-width), 100%);
   margin: 0 auto;
   text-align: start;
 }
@@ -9,14 +9,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: clamp(20px, 4vw, 36px);
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: linear-gradient(125deg, #fff9f3, #fff);
+  margin-block-end: 18px;
 }
 .header h1 {
   margin: 2px 0;
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: var(--font-title);
   line-height: 1.2;
 }
 .header p:last-child,
@@ -28,17 +25,13 @@
 .views {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 18px 0 24px;
-  padding: 6px;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  gap: 2px 18px;
+  margin: 0 0 24px;
+  border-bottom: 1px solid var(--line);
 }
 .views a {
-  flex: 1 1 auto;
-  padding: 8px 12px;
-  border-radius: 9px;
+  padding: 9px 2px;
+  border-bottom: 2px solid transparent;
   text-align: center;
   text-decoration: none;
   font-weight: 650;
@@ -46,8 +39,10 @@
 }
 .views a:hover,
 .views a[aria-current='page'] {
-  background: var(--rose-light);
   color: var(--rose-dark);
+}
+.views a[aria-current='page'] {
+  border-bottom-color: var(--rose);
 }
 .sectionHeading {
   display: flex;
@@ -68,13 +63,12 @@
 .directory {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(285px, 100%), 1fr));
-  gap: 14px;
+  gap: clamp(14px, 2vw, 20px);
 }
 .message,
 .personRow {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  background: var(--surface);
+  border-radius: var(--radius);
   padding: 14px 16px;
 }
 .message button {
@@ -132,10 +126,10 @@
 }
 @media (max-width: 480px) {
   .views {
-    gap: 3px;
+    gap: 4px 12px;
   }
   .views a {
-    padding-inline: 7px;
+    padding-inline: 2px;
     font-size: 0.9rem;
   }
 }

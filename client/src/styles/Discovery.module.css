@@ -1,5 +1,5 @@
 .page {
-  width: min(1120px, 100%);
+  width: min(var(--site-width), 100%);
   margin: 0 auto;
   text-align: start;
 }
@@ -29,15 +29,11 @@
   margin: 0;
 }
 .pageHeader {
-  padding: clamp(24px, 5vw, 52px);
-  border: 1px solid #ead8de;
-  border-radius: 24px;
-  background: linear-gradient(115deg, #fffaf3, #ffe5ed);
   margin-bottom: 24px;
 }
 .pageHeader h1 {
   margin: 4px 0 6px;
-  font-size: clamp(2rem, 5vw, 3.3rem);
+  font-size: var(--font-title);
   line-height: 1.16;
 }
 .pageHeader p:last-child {
@@ -45,7 +41,7 @@
 }
 .kicker {
   margin: 0;
-  color: #8d3658;
+  color: var(--rose-dark);
   font-weight: 750;
   font-size: 0.9rem;
 }
@@ -53,9 +49,9 @@
   display: grid;
   gap: 12px;
   padding: clamp(16px, 3vw, 26px);
-  background: #fff;
-  border: 1px solid #ead8de;
-  border-radius: 18px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
 }
 .panel label {
   font-weight: 700;
@@ -71,11 +67,14 @@
   gap: 12px;
 }
 .secondary {
-  background: #faeaf0;
-  color: #762746;
+  background: var(--surface-soft);
+  color: var(--rose-dark);
+}
+.secondary:hover:not(:disabled) {
+  background: var(--rose-light);
 }
 .textLink {
-  color: #842c50;
+  color: var(--rose-dark);
   font-weight: 700;
 }
 .resultGrid {
@@ -123,10 +122,10 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border: 1px solid #ead8de;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 6px 18px #68224109;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 .postAuthor,
 .photoEditor,
@@ -136,10 +135,18 @@
   gap: 14px;
 }
 .postAuthor {
-  padding: 10px 14px;
-  color: #453a40;
-  font-weight: 700;
+  padding: 9px 14px;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 650;
   text-decoration: none;
+}
+.postAuthor:hover {
+  color: var(--rose-dark);
+}
+.postAuthor:focus-visible,
+.postAction:focus-visible {
+  outline-offset: -2px;
 }
 .postActions,
 .discussionHeader,
@@ -151,8 +158,8 @@
 }
 .postActions {
   margin-top: auto;
-  padding: 10px;
-  border-top: 1px solid #f1e4ea;
+  padding: 5px 10px;
+  border-top: 1px solid var(--line);
 }
 .postAction {
   display: inline-flex;
@@ -161,18 +168,19 @@
   padding: 8px 10px;
   min-height: 42px;
   border-radius: 10px;
-  color: #792849;
-  background: #fff2f7;
+  color: var(--muted);
+  background: transparent;
   text-decoration: none;
   font-size: 0.92rem;
   font-weight: 650;
 }
-.postAction:hover,
+.postAction:hover:not(:disabled),
 .postAction[aria-pressed='true'] {
-  background: #f8dce8;
+  background: var(--rose-light);
+  color: var(--rose-dark);
 }
 .postAction[aria-pressed='true'] svg {
-  color: #ae325f;
+  color: var(--rose);
 }
 .postError {
   flex-basis: 100%;
@@ -185,8 +193,8 @@
   place-items: center;
   border-radius: 50%;
   overflow: hidden;
-  background: #f6dce8;
-  color: #792849;
+  background: var(--rose-light);
+  color: var(--rose-dark);
   font-weight: 750;
   font-size: clamp(1rem, 3vw, 1.35rem);
 }
@@ -223,16 +231,18 @@
 .primaryLink {
   padding: 9px 14px;
   border-radius: 10px;
-  background: #a43c64;
+  background: var(--rose);
   color: #fff;
   text-decoration: none;
   font-weight: 700;
 }
+.primaryLink:hover {
+  background: var(--rose-dark);
+}
 .discussion {
   margin: 0;
   padding: clamp(18px, 4vw, 36px);
-  border-top: 1px solid #ead8de;
-  background: #fffbfd;
+  border-top: 1px solid var(--line);
   scroll-margin-top: 20px;
 }
 .discussionHeader {
@@ -243,8 +253,8 @@
   display: inline-block;
   padding: 0 8px;
   border-radius: 10px;
-  background: #faeaf0;
-  color: #792849;
+  background: var(--surface-soft);
+  color: var(--muted);
   font-size: 0.9rem;
   vertical-align: middle;
 }
@@ -271,7 +281,7 @@
   align-items: start;
   gap: 12px;
   padding: 14px 0;
-  border-bottom: 1px solid #f1e4ea;
+  border-bottom: 1px solid var(--line);
 }
 .comment p {
   margin: 4px 0;
@@ -281,7 +291,7 @@
 }
 .muted,
 .commentMeta time {
-  color: #715a65;
+  color: var(--muted);
 }
 .commentMeta time {
   font-size: 0.82rem;
@@ -317,11 +327,11 @@
 }
 .chatUser {
   justify-self: start;
-  background: #f8e2ea;
+  background: var(--rose-light);
 }
 .chatAssistant {
   justify-self: end;
-  background: #f3f7ee;
+  background: var(--surface-soft);
 }
 .chatUser p {
   margin: 4px 0 0;
@@ -343,9 +353,9 @@
   justify-self: start;
 }
 .chatError {
-  color: #952348;
+  color: var(--error);
 }
 .handle {
   display: inline-block;
-  color: #72515e;
+  color: var(--muted);
 }

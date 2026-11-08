@@ -1,83 +1,87 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { FiSearch } from 'react-icons/fi';
 import RecipeCard from '../../components/RecipeCard';
 import { featuredRecipes } from '../../data/featuredRecipes';
 import { categories, difficulties } from '../../data/recipeOptions';
 import { searchRecipes } from '../../services/recipes';
 import styles from './Home.module.css';
 
-function CatalogFilters({ params, onSubmit }) {
+function CatalogFilters({ params, onSubmit, onClear }) {
   return (
-    <form
-      className={styles.catalogFilters}
-      onSubmit={onSubmit}
-      role="search"
-      aria-label="חיפוש מתכונים"
-    >
-      <label className={styles.catalogSearch}>
-        חיפוש לפי שם או מצרך
-        <input
-          type="search"
-          name="q"
-          defaultValue={params.get('q') || params.get('query') || ''}
-          placeholder="למשל פסטה או עגבניות"
-          maxLength={160}
-        />
-      </label>
-      <label>
-        מצרכים נוספים
-        <input
-          name="ingredients"
-          defaultValue={params.get('ingredients') || ''}
-          placeholder="מופרדים בפסיקים"
-          maxLength={160}
-        />
-      </label>
-      <label>
-        קטגוריה
-        <select name="category" defaultValue={params.get('category') || ''}>
-          <option value="">הכול</option>
-          {categories.map((category) => (
-            <option key={category}>{category}</option>
-          ))}
-        </select>
-      </label>
-      <label>
-        זמן מרבי בדקות
-        <input
-          name="maxMinutes"
-          type="number"
-          min="1"
-          max="1440"
-          defaultValue={params.get('maxMinutes') || ''}
-          placeholder="ללא הגבלה"
-        />
-      </label>
-      <label>
-        רמת קושי
-        <select name="difficulty" defaultValue={params.get('difficulty') || ''}>
-          <option value="">הכול</option>
-          <option value="unrated">לא צוינה</option>
-          {Object.entries(difficulties).map(([key, value]) => (
-            <option key={key} value={key}>
-              {value}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        מיון
-        <select name="sort" defaultValue={params.get('sort') || 'newest'}>
-          <option value="newest">חדשים קודם</option>
-          <option value="oldest">ישנים קודם</option>
-          <option value="name">שם (א-ת)</option>
-          <option value="nameDesc">שם (ת-א)</option>
-          <option value="quickest">המהירים ביותר</option>
-        </select>
-      </label>
-      <div className={styles.catalogActions}>
+    <form onSubmit={onSubmit} onReset={onClear} role="search" aria-labelledby="recipe-search">
+      <div className={styles.searchRow}>
+        <label className={styles.catalogSearch}>
+          <FiSearch aria-hidden="true" />
+          <input
+            aria-label="חיפוש לפי שם או מצרך"
+            type="search"
+            name="q"
+            defaultValue={params.get('q') || params.get('query') || ''}
+            placeholder="למשל פסטה או עגבניות"
+            maxLength={160}
+          />
+        </label>
         <button type="submit">חיפוש</button>
-        <Link to="/">איפוס</Link>
+      </div>
+      <div className={styles.filterFields}>
+        <label>
+          מצרכים נוספים
+          <input
+            name="ingredients"
+            defaultValue={params.get('ingredients') || ''}
+            placeholder="מופרדים בפסיקים"
+            maxLength={160}
+          />
+        </label>
+        <label>
+          סינון לפי קטגוריה
+          <select name="category" defaultValue={params.get('category') || ''}>
+            <option value="">הכול</option>
+            {categories.map((category) => (
+              <option key={category}>{category}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          זמן מרבי בדקות
+          <input
+            name="maxMinutes"
+            type="number"
+            min="1"
+            max="1440"
+            defaultValue={params.get('maxMinutes') || ''}
+            placeholder="ללא הגבלה"
+          />
+        </label>
+        <label>
+          רמת קושי
+          <select name="difficulty" defaultValue={params.get('difficulty') || ''}>
+            <option value="">הכול</option>
+            <option value="unrated">לא צוינה</option>
+            {Object.entries(difficulties).map(([key, value]) => (
+              <option key={key} value={key}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          מיון לפי
+          <select name="sort" defaultValue={params.get('sort') || 'newest'}>
+            <option value="newest">חדשים קודם</option>
+            <option value="oldest">ישנים קודם</option>
+            <option value="name">שם (א-ת)</option>
+            <option value="nameDesc">שם (ת-א)</option>
+            <option value="quickest">המהירים ביותר</option>
+          </select>
+        </label>
+        <div className={styles.catalogActions}>
+          <button type="submit">החלת סינון</button>
+          <button type="reset" className={styles.reset}>
+            איפוס
+          </button>
+        </div>
       </div>
     </form>
   );
@@ -129,6 +133,7 @@ export default function HomePage() {
         <div>
           <p className={styles.eyebrow}>מבשלים בבית</p>
           <h1 className={styles.headline}>כל המתכונים</h1>
+          <p className={styles.introText}>מצאו רעיון לארוחה הבאה, לפי מה שמתחשק או מה שיש בבית.</p>
         </div>
         <div className={styles.catalogActions}>
           <Link to="/demo">התנסות בלי הרשמה</Link>
@@ -137,52 +142,68 @@ export default function HomePage() {
           </Link>
         </div>
       </header>
-      <CatalogFilters key={query} params={params} onSubmit={submit} />
-      {current?.error ? (
-        <div className={styles.status} role="alert">
-          <p>{current.error}</p>
-          <button
-            onClick={() => {
-              setResult(null);
-              setAttempt((value) => value + 1);
-            }}
-          >
-            נסו שוב
-          </button>
+      <section aria-labelledby="recipe-search">
+        <h2 id="recipe-search" className={styles.searchHeading}>
+          חיפוש מתכונים
+        </h2>
+        <CatalogFilters
+          key={query}
+          params={params}
+          onSubmit={submit}
+          onClear={() => {
+            if (query) setParams({});
+          }}
+        />
+        <div className={styles.resultsHeader}>
+          <h3>מתכונים מהמטבח</h3>
+          {!current ? (
+            <p className={styles.catalogStatus} role="status">
+              {list.length ? 'מציגים מתכונים נבחרים בזמן שהקטלוג נטען…' : 'מחפשים מתכונים…'}
+            </p>
+          ) : data?.total ? (
+            <p className={styles.catalogStatus} role="status">
+              {data.total} מתכונים נמצאו
+            </p>
+          ) : null}
         </div>
-      ) : !current ? (
-        <p className={styles.catalogStatus} role="status">
-          {list.length ? 'מציגים מתכונים נבחרים בזמן שהקטלוג נטען…' : 'מחפשים מתכונים…'}
-        </p>
-      ) : data.total ? (
-        <p className={styles.catalogStatus} role="status">
-          {data.total} מתכונים נמצאו
-        </p>
-      ) : null}
-      {data && !list.length && (
-        <p className={styles.status}>לא נמצאו מתכונים. אפשר לשנות את החיפוש או להסיר סינון.</p>
-      )}
-      <div className={styles.grid}>
-        {list.map((recipe, index) => (
-          <RecipeCard key={recipe._id} recipe={recipe} eager={index < 2} />
-        ))}
-      </div>
-      {data && (data.total > data.pageSize || data.page > 1) && (
-        <nav className={styles.pagination} aria-label="עמודי מתכונים">
-          <button disabled={data.page === 1} onClick={() => page(data.page - 1)}>
-            הקודם
-          </button>
-          <span>
-            עמוד {data.page} מתוך {Math.max(1, Math.ceil(data.total / data.pageSize))}
-          </span>
-          <button
-            disabled={data.page * data.pageSize >= data.total || data.page >= 500}
-            onClick={() => page(data.page + 1)}
-          >
-            הבא
-          </button>
-        </nav>
-      )}
+        {current?.error && (
+          <div className={styles.status} role="alert">
+            <p>{current.error}</p>
+            <button
+              onClick={() => {
+                setResult(null);
+                setAttempt((value) => value + 1);
+              }}
+            >
+              נסו שוב
+            </button>
+          </div>
+        )}
+        {data && !list.length && (
+          <p className={styles.status}>לא נמצאו מתכונים. אפשר לשנות את החיפוש או להסיר סינון.</p>
+        )}
+        <div className={styles.grid}>
+          {list.map((recipe, index) => (
+            <RecipeCard key={recipe._id} recipe={recipe} eager={index < 2} />
+          ))}
+        </div>
+        {data && (data.total > data.pageSize || data.page > 1) && (
+          <nav className={styles.pagination} aria-label="עמודי מתכונים">
+            <button disabled={data.page === 1} onClick={() => page(data.page - 1)}>
+              הקודם
+            </button>
+            <span>
+              עמוד {data.page} מתוך {Math.max(1, Math.ceil(data.total / data.pageSize))}
+            </span>
+            <button
+              disabled={data.page * data.pageSize >= data.total || data.page >= 500}
+              onClick={() => page(data.page + 1)}
+            >
+              הבא
+            </button>
+          </nav>
+        )}
+      </section>
     </section>
   );
 }
