@@ -2,7 +2,7 @@ import Recipe from '../models/Recipe.js';
 
 // Documents published before visibility was introduced remain public. Lean reads
 // preserve the absence of this field instead of applying the new-document default.
-const publicRecipes = { isPublic: { $ne: false } };
+export const publicRecipes = { isPublic: { $ne: false } };
 const serializeRecipe = (recipe) => recipe && { ...recipe, isPublic: recipe.isPublic !== false };
 
 // GET /api/recipes
@@ -52,10 +52,11 @@ const getSingleRecipe = async (req, res) => {
 };
 
 const createRecipe = async (req, res) => {
-  let { title, ingredients, steps, category, imageUrl, isPublic = false } = req.body;
+  let { title, ingredients, steps, category, imageUrl, totalMinutes, isPublic = false } = req.body;
   const createdBy = req.user._id;
   if (typeof isPublic !== 'boolean')
     return res.status(400).json({ message: 'בחירת הפרטיות אינה תקינה' });
+  if (!validDuration(totalMinutes)) return invalidDuration(res);
 
   try {
     if (typeof ingredients === 'string') {
@@ -78,6 +79,7 @@ const createRecipe = async (req, res) => {
       steps,
       category,
       imageUrl,
+      totalMinutes,
       isPublic,
       createdBy,
     });
@@ -105,7 +107,16 @@ const deleteRecipe = async (req, res) => {
 const updateRecipe = async (req, res) => {
   const { id } = req.params;
 
-  const editableFields = ['title', 'category', 'imageUrl', 'ingredients', 'steps', 'isPublic'];
+  const editableFields = [
+    'title',
+    'category',
+    'imageUrl',
+    'ingredients',
+    'steps',
+    'isPublic',
+    'totalMinutes',
+  ];
+  if (!validDuration(req.body.totalMinutes)) return invalidDuration(res);
   if (req.body.isPublic !== undefined && typeof req.body.isPublic !== 'boolean') {
     return res.status(400).json({ message: 'בחירת הפרטיות אינה תקינה' });
   }
@@ -148,6 +159,11 @@ const updateRecipe = async (req, res) => {
     res.status(400).json({ mssg: 'Error updating recipe', err });
   }
 };
+
+const validDuration = (value) =>
+  value == null || (Number.isInteger(value) && value >= 1 && value <= 1440);
+const invalidDuration = (res) =>
+  res.status(400).json({ message: 'זמן הכנה צריך להיות בין 1 ל־1440 דקות' });
 
 export {
   getMyRecipes,

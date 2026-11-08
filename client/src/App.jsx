@@ -10,6 +10,9 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import ProtectedRoute from './components/routing/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
 import ResetPassword from './pages/authentication/ResetPassword';
+import Pantry from './pages/Pantry/Pantry';
+import Community from './pages/Community/Community';
+import Profile from './pages/Community/Profile';
 
 function AppHeader() {
   const { isAuth, logout, user } = useAuth();
@@ -25,6 +28,12 @@ function AppHeader() {
       <nav className={styles.appNav}>
         <Link to="/" className={styles.appLink}>
           בית
+        </Link>
+        <Link to="/pantry" className={styles.appLink}>
+          מה יש במקרר?
+        </Link>
+        <Link to="/community" className={styles.appLink}>
+          קהילה
         </Link>
 
         {!isAuth && (
@@ -66,6 +75,9 @@ export default function App() {
         <main className={styles.main}>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/pantry" element={<Pantry />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/people/:id" element={<Profile />} />
             <Route path="/recipes/:id" element={<RecipePage />} />
             <Route path="/search" element={<SearchResultsPage />} />
 

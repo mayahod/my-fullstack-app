@@ -5,7 +5,7 @@ import { fetchMyRecipes, updateMyRecipe, deleteMyRecipe } from '../../services/r
 import styles from './Dashboard.module.css';
 
 function Dashboard() {
-  const { token, logout } = useAuth();
+  const { token, logout, user } = useAuth();
   const location = useLocation();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +42,7 @@ function Dashboard() {
       title: recipe.title,
       category: recipe.category,
       imageUrl: recipe.imageUrl || '',
+      totalMinutes: recipe.totalMinutes ?? '',
       isPublic: recipe.isPublic !== false,
       ingredients: recipe.ingredients.join('\n'),
       steps: recipe.steps.join('\n'),
@@ -59,7 +60,14 @@ function Dashboard() {
     setBusy(true);
     setError('');
     try {
-      const data = await updateMyRecipe(editing, form, token);
+      const data = await updateMyRecipe(
+        editing,
+        {
+          ...form,
+          totalMinutes: form.totalMinutes ? Number(form.totalMinutes) : null,
+        },
+        token
+      );
       setRecipes((current) =>
         current.map((recipe) => (recipe._id === editing ? data.recipe : recipe))
       );
@@ -95,6 +103,7 @@ function Dashboard() {
         <div>
           <h1>אזור אישי</h1>
           <p>המתכונים שלי</p>
+          {user && <Link to={`/people/${user.id}`}>הפרופיל שלי בקהילה</Link>}
         </div>
         <Link className={styles.primary} to="/add">
           הוספת מתכון
@@ -131,6 +140,7 @@ function Dashboard() {
               </Link>
               <p>
                 {recipe.category} · {recipe.isPublic ? 'ציבורי' : 'פרטי — רק שלך'}
+                {recipe.totalMinutes ? ` · כ־${recipe.totalMinutes} דקות` : ''}
               </p>
               <div className={styles.actions}>
                 <button onClick={() => edit(recipe)}>עריכה</button>
@@ -189,6 +199,18 @@ function Dashboard() {
               <label>
                 קישור לתמונה (לא חובה)
                 <input name="imageUrl" value={form.imageUrl} onChange={change} />
+              </label>
+              <label>
+                זמן כולל בדקות (לא חובה)
+                <input
+                  name="totalMinutes"
+                  type="number"
+                  min="1"
+                  max="1440"
+                  step="1"
+                  value={form.totalMinutes}
+                  onChange={change}
+                />
               </label>
               <label className={styles.visibility}>
                 <input type="checkbox" name="isPublic" checked={form.isPublic} onChange={change} />

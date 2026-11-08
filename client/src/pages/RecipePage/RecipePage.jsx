@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import styles from './RecipePage.module.css';
 import { API_BASE } from '../../services/config';
@@ -41,6 +41,10 @@ function RecipePage() {
       ) : recipe ? (
         <div>
           <h1 className={styles.title}>{recipe.title}</h1>
+          {recipe.totalMinutes && <p>זמן כולל משוער: כ־{recipe.totalMinutes} דקות</p>}
+          {recipe.isPublic && recipe.createdBy && (
+            <Link to={`/people/${recipe.createdBy}`}>לפרופיל היוצר</Link>
+          )}
 
           <h3 className={styles.subtitle}>מצרכים:</h3>
           <ul className={styles.ingredientsList}>

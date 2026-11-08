@@ -15,6 +15,7 @@ const AddRecipe = () => {
     steps: '',
     category: '',
     imageUrl: '',
+    totalMinutes: '',
     isPublic: false,
   });
 
@@ -33,7 +34,10 @@ const AddRecipe = () => {
     if (saving) return;
     setSaving(true);
     try {
-      await addRecipe(formData, token);
+      await addRecipe(
+        { ...formData, totalMinutes: formData.totalMinutes ? Number(formData.totalMinutes) : null },
+        token
+      );
       navigate('/dashboard', { state: { notice: 'המתכון נוסף בהצלחה' } });
     } catch (error) {
       console.error('Error adding recipe:', error);
@@ -100,6 +104,18 @@ const AddRecipe = () => {
 
         <label>קישור לתמונת המתכון (לא חובה):</label>
         <input type="text" name="imageUrl" value={formData.imageUrl} onChange={handleChange} />
+
+        <label htmlFor="total-minutes">זמן כולל בדקות (לא חובה)</label>
+        <input
+          id="total-minutes"
+          name="totalMinutes"
+          type="number"
+          min="1"
+          max="1440"
+          step="1"
+          value={formData.totalMinutes}
+          onChange={handleChange}
+        />
 
         <label className={styles.visibility}>
           <input

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import recipesRoutes from './routes/recipes.js';
 import userRoutes from './routes/userRoutes.js';
+import communityRoutes from './routes/community.js';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(directory, '.env') });
@@ -25,7 +26,12 @@ app.use((req, res, next) => {
 });
 app.use(
   cors({
-    origin: process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || process.env.CLIENT_URL,
+    origin: [
+      process.env.APP_URL,
+      process.env.RENDER_EXTERNAL_URL,
+      process.env.CLIENT_URL,
+      process.env.NETLIFY_ORIGIN,
+    ].filter(Boolean),
   })
 );
 
@@ -37,6 +43,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/recipes', recipesRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/community', communityRoutes);
 app.get('/api/health', (req, res) =>
   res
     .status(mongoose.connection.readyState === 1 ? 200 : 503)

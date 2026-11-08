@@ -4,6 +4,7 @@ import { fetchRecipes } from '../../services/recipes';
 import RecipeCard from '../../components/RecipeCard';
 import SearchBar from '../../components/common/SearchBar';
 import { Link } from 'react-router-dom';
+import discovery from '../../styles/Discovery.module.css';
 
 const HomePage = () => {
   const [recipes, setRecipes] = useState([]);
@@ -75,6 +76,10 @@ const HomePage = () => {
       <div className={styles.intro}>
         <p className={styles.eyebrow}>מה מבשלים היום?</p>
         <h1 className={styles.headline}>מתכונים שכיף לחזור אליהם</h1>
+        <div className={discovery.heroActions}>
+          <Link to="/pantry">מה אפשר להכין מהמצרכים שלי?</Link>
+          <Link to="/community">לגלות את הקהילה</Link>
+        </div>
       </div>
       <div className={styles.topBarContainer}>
         <Link to="/add" className={styles.addButton}>

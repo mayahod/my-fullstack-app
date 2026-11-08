@@ -1,0 +1,12 @@
+[build]
+  command = "npm ci --prefix client --include=dev && npm run build --prefix client"
+  publish = "client/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_API_URL = "https://my-fullstack-app-tf48.onrender.com"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

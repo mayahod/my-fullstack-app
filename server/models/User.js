@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, trim: true, lowercase: true },
   password: { type: String, required: true },
   passwordVersion: { type: Number, default: 0 },
+  following: { type: [mongoose.Schema.Types.ObjectId], ref: 'User', select: false },
   resetTokenHash: { type: String, select: false },
   resetTokenExpires: { type: Date, select: false },
   resetRequestedAt: { type: Date, select: false },

@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import users from './routes/userRoutes.js';
 import recipes from './routes/recipes.js';
+import community from './routes/community.js';
 import User from './models/User.js';
 import Recipe from './models/Recipe.js';
 
@@ -23,6 +24,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
   app.use(express.json());
   app.use('/api/users', users);
   app.use('/api/recipes', recipes);
+  app.use('/api/community', community);
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -281,6 +283,71 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
       await request(`/api/recipes/${legacyId}`, 'PATCH', { isPublic: false }, token);
       assert.equal((await request(`/api/recipes/${legacyId}`)).status, 404);
     });
+    await t.test('following is idempotent and feeds contain only public recipes', async () => {
+      const other = await request('/api/users/login', 'POST', { email: secondEmail, password });
+      const follower = other.body.token;
+      const payload = {
+        title: 'Community recipe',
+        category: 'סלט',
+        ingredients: ['עגבניות'],
+        steps: ['חותכים'],
+        totalMinutes: 18,
+      };
+      const created = await request('/api/recipes', 'POST', { ...payload, isPublic: true }, token);
+      assert.equal(created.status, 201);
+      const visibleId = created.body.recipe._id;
+      const privateRecipe = await request('/api/recipes', 'POST', payload, token);
+      assert.equal(privateRecipe.status, 201);
+      assert.equal(
+        (await request('/api/recipes', 'POST', { ...payload, totalMinutes: '18' }, token)).status,
+        400
+      );
+      assert.equal(
+        (await request(`/api/recipes/${visibleId}`, 'PATCH', { totalMinutes: 0 }, token)).status,
+        400
+      );
+
+      const profilePath = `/api/community/people/${userId}`;
+      const followPath = `${profilePath}/follow`;
+      const feedPath = '/api/community/feed';
+      assert.equal((await request(feedPath)).status, 401);
+      assert.equal((await request(followPath, 'PUT')).status, 401);
+      assert.equal((await request(followPath, 'PUT', undefined, token)).status, 400);
+      const updates = await Promise.all([
+        request(followPath, 'PUT', undefined, follower),
+        request(followPath, 'PUT', undefined, follower),
+      ]);
+      assert.ok(updates.every((response) => response.status === 200));
+      const profile = (await request(profilePath, 'GET', undefined, follower)).body;
+      assert.equal(profile.isFollowing, true);
+      assert.deepEqual(Object.keys(profile.person).sort(), ['firstName', 'id']);
+      assert.ok(profile.recipes.some((recipe) => recipe._id === visibleId));
+      assert.ok(!profile.recipes.some((recipe) => recipe._id === privateRecipe.body.recipe._id));
+      const feed = (await request(feedPath, 'GET', undefined, follower)).body;
+      assert.equal(feed.following.length, 1);
+      assert.equal(feed.recipes.find((recipe) => recipe._id === visibleId).totalMinutes, 18);
+      assert.ok(!feed.recipes.some((recipe) => recipe._id === privateRecipe.body.recipe._id));
+      const cleared = await request(
+        `/api/recipes/${visibleId}`,
+        'PATCH',
+        { totalMinutes: null },
+        token
+      );
+      assert.equal(cleared.status, 200);
+      assert.equal(cleared.body.recipe.totalMinutes, null);
+      await request(`/api/recipes/${visibleId}`, 'PATCH', { isPublic: false }, token);
+      assert.ok(
+        !(await request(feedPath, 'GET', undefined, follower)).body.recipes.some(
+          (recipe) => recipe._id === visibleId
+        )
+      );
+      assert.equal(
+        (await request(followPath, 'DELETE', undefined, follower)).body.isFollowing,
+        false
+      );
+      assert.deepEqual((await request(feedPath, 'GET', undefined, follower)).body.recipes, []);
+    });
+
     await t.test(
       'password reset reports unavailable instead of claiming an email was sent',
       async () => {
