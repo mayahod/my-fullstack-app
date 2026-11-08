@@ -4,7 +4,13 @@ const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String },
   email: { type: String, required: true, unique: true, trim: true, lowercase: true },
-  password: { type: String, required: true },
+  password: {
+    type: String,
+    required() {
+      return !this.googleSubject;
+    },
+  },
+  googleSubject: { type: String, unique: true, sparse: true },
   passwordVersion: { type: Number, default: 0 },
   username: { type: String, match: /^[a-z0-9_]{3,24}$/ },
   avatar: { type: String, select: false },

@@ -171,3 +171,11 @@
   flex: 0 0 auto;
   accent-color: var(--rose);
 }
+.signInSettings {
+  margin-block-end: 16px;
+}
+
+.signInSettings summary {
+  cursor: pointer;
+  width: fit-content;
+}

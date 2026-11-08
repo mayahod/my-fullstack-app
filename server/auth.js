@@ -6,6 +6,15 @@ export function getSecret() {
   return process.env.JWT_SECRET;
 }
 
+export function userSession(user) {
+  const token = jwt.sign(
+    { id: user._id.toString(), version: user.passwordVersion || 0 },
+    getSecret(),
+    { expiresIn: '2h', algorithm: 'HS256' }
+  );
+  return { token, user: publicUser(user) };
+}
+
 export function publicUser(user) {
   return {
     id: user._id,
@@ -13,6 +22,7 @@ export function publicUser(user) {
     lastName: user.lastName,
     name: user.firstName,
     email: user.email,
+    ...(user.googleSubject ? { googleLinked: true } : {}),
   };
 }
 

@@ -21,7 +21,7 @@ export default function AuthProvider({ children }) {
 
   const login = (userObj, jwt) => {
     setAuthError(null);
-    setChecking(true);
+    if (jwt !== token) setChecking(true);
     setUser(userObj);
     setToken(jwt);
     localStorage.setItem('user', JSON.stringify(userObj));

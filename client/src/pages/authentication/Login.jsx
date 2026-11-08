@@ -3,16 +3,18 @@ import styles from './Auth.module.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../services/config';
+import GoogleSignIn from '../../components/GoogleSignIn';
+import useGoogleClientId from '../../context/useGoogleClientId';
 
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const googleClientId = useGoogleClientId();
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [message, setMessage] = useState(null);
-  const [messageType, setMessageType] = useState('');
 
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -22,6 +24,16 @@ const Login = () => {
 
   const handleChange = (e) => {
     setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
+  };
+
+  const completeLogin = ({ user, token }) => {
+    login(user, token);
+    const from = location.state?.from;
+    const destination =
+      from?.pathname?.startsWith('/') && !from.pathname.startsWith('//')
+        ? `${from.pathname}${from.search || ''}${from.hash || ''}`
+        : '/community';
+    navigate(destination, { replace: true });
   };
 
   const handleSubmit = async (e) => {
@@ -38,23 +50,12 @@ const Login = () => {
 
       const data = await res.json();
       if (res.ok) {
-        login(data.user, data.token);
-        setMessage('!התחברת בהצלחה');
-        setMessageType('success');
-        setFormData({ email: '', password: '' });
-        const from = location.state?.from;
-        const destination =
-          from?.pathname?.startsWith('/') && !from.pathname.startsWith('//')
-            ? `${from.pathname}${from.search || ''}${from.hash || ''}`
-            : '/community';
-        navigate(destination, { replace: true });
+        completeLogin(data);
         return;
       }
       setMessage(data.message || 'שגיאה בהתחברות');
-      setMessageType('error');
     } catch {
       setMessage('שגיאה בשרת');
-      setMessageType('error');
     } finally {
       setLoading(false);
     }
@@ -95,7 +96,11 @@ const Login = () => {
 
   return (
     <div className={styles.container}>
-      {message && <div className={`${styles.popup} ${styles[messageType]}`}>{message}</div>}
+      {message && (
+        <div className={`${styles.popup} ${styles.error}`} role="alert">
+          {message}
+        </div>
+      )}
 
       <h1>התחברות</h1>
       <form className={styles.form} onSubmit={handleSubmit}>
@@ -138,6 +143,11 @@ const Login = () => {
         <button type="submit" disabled={loading}>
           {loading ? 'מתחברים…' : 'התחבר'}
         </button>
+        {googleClientId && (
+          <div className={styles.googleOption}>
+            <GoogleSignIn clientId={googleClientId} onSuccess={completeLogin} />
+          </div>
+        )}
       </form>
 
       {showReset && (

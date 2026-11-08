@@ -23,6 +23,12 @@
 
 צרו מפתח ב-[Google AI Studio](https://aistudio.google.com/apikey) ושמרו אותו במשתני הסביבה של שרת Render תחת `GEMINI_API_KEY`. בפריסה מקומית אפשר לשמור אותו ב-`server/.env`. המפתח שייך לשרת בלבד ואינו חלק מבניית Netlify. אחרי פריסה מחדש, `/api/pantry/status` יציין אם המפתח הוגדר. שלחו שאלה דרך האתר כדי לוודא שהספק מחזיר תשובה.
 
+## הפעלת התחברות עם Google
+
+1. הגדירו אפליקציית OAuth ב-Google Cloud וצרו Client ID מסוג **Web application**. הוסיפו את כתובת ה-HTTPS של הממשק ל-**Authorized JavaScript origins**. לבדיקה מקומית הוסיפו גם `http://localhost` וגם `http://localhost:3002`. הכפתור משתמש בחלונית ולכן אין צורך בכתובת הפניה או ב-Client Secret. [הוראות ההגדרה של Google](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
+2. הגדירו את המזהה הציבורי כ-`GOOGLE_CLIENT_ID` ב-Render, או ב-`server/.env` לבדיקה מקומית. הממשק מקבל אותו מהשרת בזמן פתיחת המסך, כך שאין צורך בפריסה נוספת ב-Netlify כדי להפעיל את הכפתור.
+3. בדקו כניסה עם Gmail חדש, ולאחר מכן קישור לחשבון קיים דרך **אזור אישי → הגדרות התחברות**. קישור לחשבון קיים דורש כניסה קודמת לאתר והתאמה של כתובת האימייל. הרשמה ישירה דרך Google זמינה ל-Gmail ול-Google Workspace. חשבונות שנוצרו דרך Google ממשיכים להיכנס דרך Google.
+
 ## משתני סביבה בשרת
 
 | משתנה                 | שימוש                                                |

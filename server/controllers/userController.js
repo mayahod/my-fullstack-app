@@ -1,16 +1,107 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import { randomBytes, createHash } from 'node:crypto';
 import { mailConfigured, publicAppUrl, sendPasswordResetEmail } from '../services/mail.js';
 
-import { getSecret, publicUser } from '../auth.js';
+import { publicUser, userSession } from '../auth.js';
 const BCRYPT_ROUNDS = 10;
 const RESET_TOKEN_TTL_MS = 30 * 60_000;
 const RESET_REQUEST_COOLDOWN_MS = 60_000;
 
 const normalizedEmail = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
 const validEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;
+const google = new OAuth2Client();
+const googleConflict =
+  'כבר קיים חשבון עם האימייל הזה. התחברו עם סיסמה וקשרו את Google באזור האישי.';
+
+export const googleConfig = (_req, res) =>
+  res.json({ clientId: process.env.GOOGLE_CLIENT_ID?.trim() || null });
+
+export const verifyGoogle = async (req, res, next) => {
+  const audience = process.env.GOOGLE_CLIENT_ID?.trim();
+  if (!audience) return res.status(503).json({ message: 'התחברות עם Google עדיין אינה זמינה' });
+  const { credential } = req.body ?? {};
+  if (typeof credential !== 'string' || !credential || credential.length > 8192)
+    return res.status(400).json({ message: 'פרטי ההתחברות עם Google חסרים או אינם תקינים' });
+
+  let claims;
+  try {
+    const verifier = req.app.locals.googleVerifier || google;
+    const ticket = await verifier.verifyIdToken({ idToken: credential, audience });
+    claims = ticket.getPayload();
+  } catch {
+    return res.status(401).json({ message: 'לא ניתן לאמת את ההתחברות עם Google' });
+  }
+
+  const email = normalizedEmail(claims?.email);
+  if (
+    typeof claims?.sub !== 'string' ||
+    !claims.sub ||
+    claims.email_verified !== true ||
+    !validEmail(email)
+  )
+    return res.status(401).json({ message: 'נדרש חשבון Google עם כתובת אימייל מאומתת' });
+
+  req.googleIdentity = { ...claims, email };
+  next();
+};
+
+export const loginWithGoogle = async (req, res) => {
+  const { sub: googleSubject, email, hd, given_name, family_name } = req.googleIdentity;
+  try {
+    await User.init();
+    const linked = await User.findOne({ googleSubject });
+    if (linked) return res.json(userSession(linked));
+
+    // Google can vouch for current mailbox ownership for Gmail and Workspace addresses.
+    if (!email.endsWith('@gmail.com') && !hd)
+      return res.status(403).json({
+        message:
+          'להרשמה דרך Google נדרש Gmail או Google Workspace. אפשר להירשם עם סיסמה ולקשר את החשבון באזור האישי.',
+      });
+
+    const user = await User.create({
+      googleSubject,
+      email,
+      firstName: given_name?.trim().slice(0, 100) || 'משתמש Google',
+      lastName: family_name?.trim().slice(0, 100),
+    });
+    return res.json(userSession(user));
+  } catch (error) {
+    if (error.code === 11000) {
+      // Simultaneous first sign-ins with the same Google account share one user.
+      const linked = await User.findOne({ googleSubject }).catch(() => null);
+      if (linked) return res.json(userSession(linked));
+      return res.status(409).json({ message: googleConflict });
+    }
+    return res.status(500).json({ message: 'שגיאה בשרת, נסו שוב מאוחר יותר' });
+  }
+};
+
+export const linkGoogle = async (req, res) => {
+  const { sub: googleSubject, email } = req.googleIdentity;
+  if (email !== req.user.email)
+    return res.status(403).json({ message: 'כתובת האימייל של Google צריכה להתאים לחשבון באתר' });
+  const conflict = 'אחד החשבונות כבר מקושר לחשבון אחר';
+  try {
+    await User.init();
+    const user = await User.findOneAndUpdate(
+      {
+        _id: req.user._id,
+        email,
+        $or: [{ googleSubject: { $exists: false } }, { googleSubject }],
+      },
+      { $set: { googleSubject } },
+      { new: true }
+    );
+    if (!user) return res.status(409).json({ message: conflict });
+    return res.json({ user: publicUser(user) });
+  } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ message: conflict });
+    return res.status(500).json({ message: 'שגיאה בשרת, נסו שוב מאוחר יותר' });
+  }
+};
 
 export const registerUser = async (req, res) => {
   try {
@@ -64,18 +155,12 @@ export const loginUser = async (req, res) => {
     }
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: 'האימייל או הסיסמה שגויים' });
+    if (!user?.password) return res.status(401).json({ message: 'האימייל או הסיסמה שגויים' });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'האימייל או הסיסמה שגויים' });
 
-    const token = jwt.sign(
-      { id: user._id.toString(), version: user.passwordVersion || 0 },
-      getSecret(),
-      { expiresIn: '2h', algorithm: 'HS256' }
-    );
-
-    res.status(200).json({ token, user: publicUser(user) });
+    res.status(200).json(userSession(user));
   } catch (error) {
     res.status(500).json({ message: 'שגיאה בשרת, נסו שוב מאוחר יותר' });
   }
@@ -98,6 +183,7 @@ export const forgotPassword = async (req, res) => {
     const user = await User.findOneAndUpdate(
       {
         email,
+        password: { $type: 'string' },
         $or: [
           { resetRequestedAt: { $exists: false } },
           { resetRequestedAt: { $lt: new Date(Date.now() - RESET_REQUEST_COOLDOWN_MS) } },

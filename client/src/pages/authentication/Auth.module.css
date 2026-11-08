@@ -35,6 +35,15 @@
   color: var(--ink);
 }
 
+.googleOption {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 16px;
+  margin-block-start: 4px;
+}
+
 .primaryBtn {
   background-color: var(--rose);
   color: #fff;

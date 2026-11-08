@@ -5,10 +5,13 @@ import { fetchMyRecipes, updateMyRecipe, deleteMyRecipe } from '../../services/r
 import styles from './Dashboard.module.css';
 import { difficulties } from '../../data/recipeOptions';
 import RecipeImage from '../../components/RecipeImage';
+import GoogleSignIn from '../../components/GoogleSignIn';
+import useGoogleClientId from '../../context/useGoogleClientId';
 
 function Dashboard() {
-  const { token, logout, user } = useAuth();
+  const { token, logout, user, login } = useAuth();
   const location = useLocation();
+  const googleClientId = useGoogleClientId();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -114,6 +117,23 @@ function Dashboard() {
           הוספת מתכון
         </Link>
       </header>
+      {googleClientId && user && (
+        <details className={styles.signInSettings}>
+          <summary>הגדרות התחברות</summary>
+          {user.googleLinked ? (
+            <p role="status">חשבון Google מקושר</p>
+          ) : (
+            <>
+              <p>אפשר לקשר את חשבון Google עם אותה כתובת אימייל.</p>
+              <GoogleSignIn
+                clientId={googleClientId}
+                token={token}
+                onSuccess={({ user }) => login(user, token)}
+              />
+            </>
+          )}
+        </details>
+      )}
       {notice && (
         <p className={styles.notice} role="status">
           {notice}

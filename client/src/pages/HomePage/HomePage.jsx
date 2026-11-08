@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FiSearch } from 'react-icons/fi';
+import { FiChevronDown, FiSearch } from 'react-icons/fi';
 import RecipeCard from '../../components/RecipeCard';
 import { featuredRecipes } from '../../data/featuredRecipes';
 import { categories, difficulties } from '../../data/recipeOptions';
@@ -8,8 +8,18 @@ import { searchRecipes } from '../../services/recipes';
 import styles from './Home.module.css';
 
 function CatalogFilters({ params, onSubmit, onClear }) {
+  const [showAdvanced, setShowAdvanced] = useState(
+    () => params.has('ingredients') || params.has('maxMinutes') || params.has('difficulty')
+  );
+
   return (
-    <form onSubmit={onSubmit} onReset={onClear} role="search" aria-labelledby="recipe-search">
+    <form
+      onSubmit={onSubmit}
+      onReset={onClear}
+      onInvalid={() => setShowAdvanced(true)}
+      role="search"
+      aria-labelledby="recipe-search"
+    >
       <div className={styles.searchRow}>
         <label className={styles.catalogSearch}>
           <FiSearch aria-hidden="true" />
@@ -26,43 +36,11 @@ function CatalogFilters({ params, onSubmit, onClear }) {
       </div>
       <div className={styles.filterFields}>
         <label>
-          מצרכים נוספים
-          <input
-            name="ingredients"
-            defaultValue={params.get('ingredients') || ''}
-            placeholder="מופרדים בפסיקים"
-            maxLength={160}
-          />
-        </label>
-        <label>
           סינון לפי קטגוריה
           <select name="category" defaultValue={params.get('category') || ''}>
             <option value="">הכול</option>
             {categories.map((category) => (
               <option key={category}>{category}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          זמן מרבי בדקות
-          <input
-            name="maxMinutes"
-            type="number"
-            min="1"
-            max="1440"
-            defaultValue={params.get('maxMinutes') || ''}
-            placeholder="ללא הגבלה"
-          />
-        </label>
-        <label>
-          רמת קושי
-          <select name="difficulty" defaultValue={params.get('difficulty') || ''}>
-            <option value="">הכול</option>
-            <option value="unrated">לא צוינה</option>
-            {Object.entries(difficulties).map(([key, value]) => (
-              <option key={key} value={key}>
-                {value}
-              </option>
             ))}
           </select>
         </label>
@@ -76,11 +54,61 @@ function CatalogFilters({ params, onSubmit, onClear }) {
             <option value="quickest">המהירים ביותר</option>
           </select>
         </label>
-        <div className={styles.catalogActions}>
-          <button type="submit">החלת סינון</button>
-          <button type="reset" className={styles.reset}>
-            איפוס
+        <div
+          id="advanced-recipe-filters"
+          className={styles.advancedFilters}
+          data-expanded={showAdvanced}
+        >
+          <label>
+            מצרכים נוספים
+            <input
+              name="ingredients"
+              defaultValue={params.get('ingredients') || ''}
+              placeholder="מופרדים בפסיקים"
+              maxLength={160}
+            />
+          </label>
+          <label>
+            זמן מרבי בדקות
+            <input
+              name="maxMinutes"
+              type="number"
+              min="1"
+              max="1440"
+              defaultValue={params.get('maxMinutes') || ''}
+              placeholder="ללא הגבלה"
+            />
+          </label>
+          <label>
+            רמת קושי
+            <select name="difficulty" defaultValue={params.get('difficulty') || ''}>
+              <option value="">הכול</option>
+              <option value="unrated">לא צוינה</option>
+              {Object.entries(difficulties).map(([key, value]) => (
+                <option key={key} value={key}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className={styles.filterToolbar}>
+          <button
+            type="button"
+            className={styles.filterToggle}
+            aria-expanded={showAdvanced}
+            aria-controls="advanced-recipe-filters"
+            onClick={() => setShowAdvanced((value) => !value)}
+          >
+            {showAdvanced ? 'פחות מסננים' : 'עוד מסננים'}
+            <FiChevronDown aria-hidden="true" />
           </button>
+          <div className={styles.catalogActions}>
+            <button type="submit">החלת סינון</button>
+            <button type="reset" className={styles.reset}>
+              איפוס
+            </button>
+          </div>
         </div>
       </div>
     </form>

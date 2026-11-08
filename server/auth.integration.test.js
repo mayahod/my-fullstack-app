@@ -22,7 +22,9 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
   await User.init();
   const email = `auth-check-${randomUUID()}@example.test`;
   const secondEmail = `auth-check-${randomUUID()}@example.test`;
+  const googleEmail = `auth-check-${randomUUID()}@gmail.com`;
   const password = `Test-${randomUUID()}`;
+  const newPassword = `New-${randomUUID()}`;
   const app = express();
   app.use(express.json());
   app.use('/api/users', users);
@@ -657,7 +659,6 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
             { _id: userId },
             { $set: { resetTokenExpires: new Date(Date.now() + 60000) } }
           );
-          const newPassword = `New-${randomUUID()}`;
           const simultaneous = await Promise.all(
             [1, 2].map(() =>
               request('/api/users/reset-password', 'POST', {
@@ -707,12 +708,85 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
         }
       }
     );
+    await t.test(
+      'Google registration and linking preserve distinct account ownership',
+      async () => {
+        const previousClientId = process.env.GOOGLE_CLIENT_ID;
+        process.env.GOOGLE_CLIENT_ID = 'integration-test.apps.googleusercontent.com';
+        const newClaims = {
+          sub: randomUUID(),
+          email: googleEmail,
+          email_verified: true,
+          given_name: 'Google Test',
+        };
+        const existingClaims = { ...newClaims, sub: randomUUID(), email, hd: 'example.test' };
+        const claimsByCredential = {
+          new: newClaims,
+          existing: existingClaims,
+          changed: { ...newClaims, email: 'changed-address@example.test' },
+          unverified: { ...newClaims, email_verified: false },
+          external: { ...newClaims, sub: randomUUID(), email: 'third-party@example.test' },
+          mismatch: { ...existingClaims, email: secondEmail },
+        };
+        app.locals.googleVerifier = {
+          async verifyIdToken({ idToken, audience }) {
+            assert.equal(audience, 'integration-test.apps.googleusercontent.com');
+            const claims = claimsByCredential[idToken];
+            if (!claims) throw new Error('Invalid token');
+            return { getPayload: () => claims };
+          },
+        };
+        const signIn = (credential) => request('/api/users/google', 'POST', { credential });
+        const link = (credential, session) =>
+          request('/api/users/google/link', 'POST', { credential }, session);
+        try {
+          const passwordLogin = await request('/api/users/login', 'POST', {
+            email,
+            password: newPassword,
+          });
+          assert.equal(passwordLogin.status, 200);
+          const session = passwordLogin.body.token;
+          assert.deepEqual((await request('/api/users/google/config')).body, {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+          });
+          assert.equal((await signIn('invalid')).status, 401);
+          assert.equal((await signIn('unverified')).status, 401);
+          assert.equal((await signIn('external')).status, 403);
+          assert.equal((await signIn('existing')).status, 409);
+          assert.equal((await link('existing')).status, 401);
+          assert.equal((await link('mismatch', session)).status, 403);
+          assert.equal((await link('existing', session)).body.user.googleLinked, true);
+          assert.equal((await signIn('existing')).body.user.id, userId);
+          assert.equal(
+            (await request('/api/users/me', 'GET', undefined, session)).body.user.id,
+            userId
+          );
+
+          const [first, simultaneous] = await Promise.all([signIn('new'), signIn('new')]);
+          assert.equal(first.status, 200);
+          assert.equal(simultaneous.status, 200);
+          assert.equal(first.body.user.id, simultaneous.body.user.id);
+          assert.equal(first.body.user.googleSubject, undefined);
+          assert.equal((await signIn('changed')).body.user.id, first.body.user.id);
+          assert.equal(await User.countDocuments({ email: googleEmail }), 1);
+          assert.equal((await User.findOne({ email: googleEmail })).password, undefined);
+          assert.equal(
+            (await request('/api/users/login', 'POST', { email: googleEmail, password })).status,
+            401
+          );
+        } finally {
+          delete app.locals.googleVerifier;
+          if (previousClientId === undefined) delete process.env.GOOGLE_CLIENT_ID;
+          else process.env.GOOGLE_CLIENT_ID = previousClientId;
+        }
+      }
+    );
   } finally {
     // Remove only records created by this run, including on assertion failure.
     const testUsers = await User.find({ email: { $in: [email, secondEmail] } }).select('_id');
     await Collection.deleteMany({ owner: { $in: testUsers.map((user) => user._id) } });
     await Recipe.deleteMany({ createdBy: { $in: testUsers.map((user) => user._id) } });
-    await User.deleteMany({ email: { $in: [email, secondEmail] } });
+    await User.deleteMany({ email: { $in: [email, secondEmail, googleEmail] } });
     await new Promise((resolve) => server.close(resolve));
     await mongoose.disconnect();
   }
