@@ -347,10 +347,21 @@
   justify-self: end;
   background: #f3f7ee;
 }
-.chatUser p,
-.chatAssistant p {
+.chatUser p {
   margin: 4px 0 0;
   white-space: pre-wrap;
+}
+.chatAssistant p,
+.chatAssistant ul,
+.chatAssistant ol {
+  margin: 8px 0 0;
+}
+.chatAssistant ul,
+.chatAssistant ol {
+  padding-inline-start: 1.5em;
+}
+.chatAssistant li + li {
+  margin-top: 4px;
 }
 .chatForm button {
   justify-self: start;

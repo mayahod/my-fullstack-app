@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { API_BASE } from '../../services/config';
 import styles from '../../styles/Discovery.module.css';
+import CookingAnswer from './CookingAnswer';
 
 const sample = [
   { role: 'user', text: 'יש לי ביצים, עגבניות ובצל. מה אפשר להכין?' },
@@ -111,7 +112,11 @@ export default function Pantry() {
               key={index}
             >
               <strong>{message.role === 'user' ? 'אתם' : 'עוזר הבישול'}</strong>
-              <p>{message.text}</p>
+              {message.role === 'assistant' ? (
+                <CookingAnswer text={message.text} />
+              ) : (
+                <p>{message.text}</p>
+              )}
             </article>
           ))}
           {pending && (
