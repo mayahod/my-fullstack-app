@@ -5,9 +5,11 @@ import RecipeCard from '../../components/RecipeCard';
 import SearchBar from '../../components/common/SearchBar';
 import { Link } from 'react-router-dom';
 import discovery from '../../styles/Discovery.module.css';
+import { featuredRecipes } from '../../data/featuredRecipes';
 
 const HomePage = () => {
-  const [recipes, setRecipes] = useState([]);
+  const [liveRecipes, setLiveRecipes] = useState(null);
+  const recipes = liveRecipes ?? featuredRecipes;
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,7 +30,7 @@ const HomePage = () => {
       .then((data) => {
         if (!active) return;
         const list = Array.isArray(data) ? data : (data?.recipes ?? []);
-        setRecipes(list);
+        setLiveRecipes(list);
       })
       .catch(() => {
         if (active) setError('לא ניתן לטעון את המתכונים כרגע. בדקו את החיבור ונסו שוב.');
@@ -140,29 +142,28 @@ const HomePage = () => {
           </ul>
         )}
 
-        {searchTerm.trim() && searchSuggestions.length === 0 && (
+        {searchTerm.trim() && liveRecipes && searchSuggestions.length === 0 && (
           <div className={styles.suggestions}>
             <div className={styles.noResultsRow}>לא נמצאו תוצאות</div>
           </div>
         )}
       </div>
 
-      {isLoading ? (
-        <div className={styles.status} role="status">
-          <p>טוען מתכונים…</p>
-          {slow && <p>הטעינה מתארכת מעט. עוד רגע המתכונים כאן.</p>}
-        </div>
-      ) : error ? (
+      {isLoading && slow && (
+        <p role="status">בינתיים אפשר לפתוח את המתכונים המוצגים. הרשימה המלאה עדיין נטענת.</p>
+      )}
+      {error && (
         <div className={styles.status} role="alert">
           <p>{error}</p>
           <button onClick={() => setAttempt((value) => value + 1)}>נסו שוב</button>
         </div>
-      ) : filteredRecipes.length === 0 ? (
+      )}
+      {liveRecipes && filteredRecipes.length === 0 ? (
         <p className={styles.status}>לא נמצאו מתכונים בסינון שבחרת</p>
       ) : (
         <div className={styles.grid}>
-          {filteredRecipes.map((recipe) => (
-            <RecipeCard key={recipe._id} recipe={recipe} />
+          {filteredRecipes.map((recipe, index) => (
+            <RecipeCard key={recipe._id} recipe={recipe} eager={index < 2} />
           ))}
         </div>
       )}

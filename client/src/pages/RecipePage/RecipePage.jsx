@@ -4,19 +4,23 @@ import styles from './RecipePage.module.css';
 import { API_BASE } from '../../services/config';
 import { useAuth } from '../../context/AuthContext';
 import RecipeDiscussion from './RecipeDiscussion';
+import { featuredRecipes } from '../../data/featuredRecipes';
 
 const displayText = (value) => value.replace(/[\u05be\u2012-\u2015]/g, '-');
 
 function RecipePage() {
   const { id } = useParams();
   const { token } = useAuth();
-  const [recipe, setRecipe] = useState(null);
+  const [loadedRecipe, setRecipe] = useState(null);
   const [error, setError] = useState(null);
+  const featured = featuredRecipes.find((entry) => entry._id === id);
+  const recipe = featured ?? (loadedRecipe?._id === id ? loadedRecipe : null);
 
   useEffect(() => {
     const controller = new AbortController();
     setRecipe(null);
     setError(null);
+    if (featured) return;
     fetch(`${API_BASE}/api/recipes/${id}`, {
       signal: controller.signal,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -35,11 +39,11 @@ function RecipePage() {
         if (err.name !== 'AbortError') setError(err.message);
       });
     return () => controller.abort();
-  }, [id, token]);
+  }, [id, token, featured]);
 
   return (
     <div className={styles.container}>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && !recipe && <p style={{ color: 'red' }}>{error}</p>}
       {!recipe && !error ? (
         <p role="status">טוענים את המתכון…</p>
       ) : recipe ? (
