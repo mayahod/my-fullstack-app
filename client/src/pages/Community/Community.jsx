@@ -27,11 +27,29 @@ export default function Community() {
   const location = useLocation();
   const [people, setPeople] = useState(null);
   const [feed, setFeed] = useState(null);
+  const [recent, setRecent] = useState(null);
+  const [recentError, setRecentError] = useState('');
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [peopleError, setPeopleError] = useState('');
+  const followedPosts = new Set(feed?.recipes.map((recipe) => recipe._id));
+  const discoveries = recent?.filter((recipe) => !followedPosts.has(recipe._id));
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setRecent(null);
+    setRecentError('');
+    communityRequest('/discover', { token: isAuth ? token : undefined, signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted) setRecent(data.recipes);
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) setRecentError(err.message);
+      });
+    return () => controller.abort();
+  }, [token, isAuth, attempt]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,6 +99,31 @@ export default function Community() {
           )}
         </div>
       </header>
+      <section aria-labelledby="recent-heading">
+        <div className={styles.sectionHeader}>
+          <h2 id="recent-heading">חדשים בקהילה</h2>
+        </div>
+        {recentError ? (
+          <div className={styles.panel} role="alert">
+            {recentError}
+            <button onClick={() => setAttempt((value) => value + 1)}>נסו שוב</button>
+          </div>
+        ) : recent === null ? (
+          <p role="status">טוענים מתכונים מהקהילה…</p>
+        ) : discoveries.length ? (
+          <div className={styles.resultGrid}>
+            {discoveries.map((recipe) => (
+              <CommunityPost key={recipe._id} recipe={recipe} />
+            ))}
+          </div>
+        ) : (
+          <p className={styles.panel}>
+            {recent.length
+              ? 'אין כרגע מתכונים נוספים מעבר למה שמופיע בפיד שלך.'
+              : 'עדיין אין מתכונים שפורסמו בקהילה.'}
+          </p>
+        )}
+      </section>
       <section aria-labelledby="feed-heading">
         <div className={styles.sectionHeader}>
           <h2 id="feed-heading">הפיד שלי</h2>

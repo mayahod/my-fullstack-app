@@ -312,6 +312,15 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
       const profilePath = `/api/community/people/${userId}`;
       const followPath = `${profilePath}/follow`;
       const feedPath = '/api/community/feed';
+      const discover = await request('/api/community/discover');
+      assert.equal(discover.status, 200);
+      assert.equal(
+        discover.body.recipes.find((recipe) => recipe._id === visibleId).author.id,
+        userId
+      );
+      assert.ok(
+        !discover.body.recipes.some((recipe) => recipe._id === privateRecipe.body.recipe._id)
+      );
       assert.equal((await request(feedPath)).status, 401);
       assert.equal((await request(followPath, 'PUT')).status, 401);
       assert.equal((await request(followPath, 'PUT', undefined, token)).status, 400);

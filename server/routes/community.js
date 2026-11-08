@@ -90,6 +90,24 @@ router.patch('/profile', requireAuth, rateLimit({ limit: 12 }), async (req, res)
   }
 });
 
+router.get('/discover', optionalAuth, async (req, res) => {
+  try {
+    const recipes = await communityPosts({ $type: 'objectId' }, req.user?._id, 9);
+    const people = await User.find({ _id: { $in: recipes.map((recipe) => recipe.createdBy) } })
+      .select(authorFields)
+      .lean();
+    const authors = new Map(people.map((author) => [String(author._id), publicAuthor(author)]));
+    res.json({
+      recipes: recipes.map((recipe) => ({
+        ...recipe,
+        author: authors.get(String(recipe.createdBy)),
+      })),
+    });
+  } catch {
+    return fail(res);
+  }
+});
+
 router.get('/feed', requireAuth, async (req, res) => {
   try {
     const ids = await getFollowing(req.user._id);

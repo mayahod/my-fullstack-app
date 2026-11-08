@@ -14,11 +14,11 @@ const commentId = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
 const count = (field) => ({ $size: { $ifNull: [field, []] } });
 const publicPost = (id) => ({ _id: id, ...publicRecipes });
 
-export function communityPosts(createdBy, viewerId) {
+export function communityPosts(createdBy, viewerId, limit = 60) {
   return Recipe.aggregate([
     { $match: { ...publicRecipes, createdBy } },
     { $sort: { createdAt: -1, _id: -1 } },
-    { $limit: 60 },
+    { $limit: limit },
     {
       $addFields: {
         likeCount: count('$likes'),
