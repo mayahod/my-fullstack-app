@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { communityRequest } from '../../services/community';
-import RecipeCard from '../../components/RecipeCard';
+import Avatar from '../../components/Avatar';
+import CommunityPost from '../../components/CommunityPost';
+import ProfilePhoto from './ProfilePhoto';
 import styles from '../../styles/Discovery.module.css';
 
 export default function Profile() {
@@ -63,7 +65,9 @@ export default function Profile() {
         body: { username },
       });
       setProfile((current) =>
-        current?.person.id === person.id ? { ...current, person } : current
+        current?.person.id === person.id
+          ? { ...current, person: { ...current.person, username: person.username } }
+          : current
       );
       setUsername(person.username ?? '');
       setNotice('שם המשתמש עודכן');
@@ -87,71 +91,88 @@ export default function Profile() {
       {!profile && !error && <p role="status">טוענים את הפרופיל…</p>}
       {profile && (
         <>
-          <header className={styles.pageHeader}>
-            <p className={styles.kicker}>פרופיל בקהילה</p>
-            <h1>{profile.person.firstName}</h1>
-            {profile.person.username && (
-              <p>
-                <bdi className={styles.handle} dir="ltr">
-                  @{profile.person.username}
-                </bdi>
-              </p>
-            )}
-            {user?.id === profile.person.id ? (
-              <Link className={styles.textLink} to="/dashboard">
-                ניהול המתכונים שלי
-              </Link>
-            ) : isAuth ? (
-              <button
-                type="button"
-                disabled={busy}
-                aria-pressed={profile.isFollowing}
-                onClick={toggleFollow}
-              >
-                {busy ? 'מעדכנים…' : profile.isFollowing ? 'הפסקת מעקב' : 'לעקוב'}
-              </button>
-            ) : (
-              <Link className={styles.textLink} to="/login" state={{ from: location }}>
-                התחברו כדי לעקוב
-              </Link>
-            )}
+          <header className={`${styles.pageHeader} ${styles.profileHeader}`}>
+            <Avatar person={profile.person} size={96} />
+            <div>
+              <p className={styles.kicker}>פרופיל בקהילה</p>
+              <h1>{profile.person.firstName}</h1>
+              {profile.person.username && (
+                <p>
+                  <bdi className={styles.handle} dir="ltr">
+                    @{profile.person.username}
+                  </bdi>
+                </p>
+              )}
+              {user?.id === profile.person.id ? (
+                <Link className={styles.textLink} to="/dashboard">
+                  ניהול המתכונים שלי
+                </Link>
+              ) : isAuth ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  aria-pressed={profile.isFollowing}
+                  onClick={toggleFollow}
+                >
+                  {busy ? 'מעדכנים…' : profile.isFollowing ? 'הפסקת מעקב' : 'לעקוב'}
+                </button>
+              ) : (
+                <Link className={styles.textLink} to="/login" state={{ from: location }}>
+                  התחברו כדי לעקוב
+                </Link>
+              )}
+            </div>
           </header>
           {user?.id === profile.person.id && (
-            <form className={styles.panel} onSubmit={saveUsername}>
-              <label htmlFor="profile-username">שם משתמש בקהילה</label>
-              <input
-                id="profile-username"
-                dir="ltr"
-                maxLength={25}
-                autoComplete="off"
-                value={username}
-                disabled={busy}
-                onChange={(event) => {
-                  setUsername(event.target.value);
-                  setNotice('');
+            <div className={styles.profileEditors}>
+              <ProfilePhoto
+                key={id}
+                person={profile.person}
+                token={token}
+                onSaved={(avatarVersion) => {
+                  setProfile((current) =>
+                    current?.person.id === id
+                      ? { ...current, person: { ...current.person, avatarVersion } }
+                      : current
+                  );
                 }}
               />
-              <small>
-                3-24 אותיות באנגלית, ספרות או קו תחתון. שם המשתמש והשם הפרטי יופיעו בחיפוש. אפשר
-                להשאיר ריק כדי להסיר את שם המשתמש.
-              </small>
-              <div className={styles.actions}>
-                <button
-                  type="submit"
-                  disabled={busy || username === (profile.person.username ?? '')}
-                  aria-busy={busy}
-                >
-                  {busy ? 'שומרים…' : notice ? 'נשמר' : 'שמירת שם משתמש'}
-                </button>
-              </div>
-              {notice && <p role="status">{notice}</p>}
-            </form>
+              <form className={styles.panel} onSubmit={saveUsername}>
+                <label htmlFor="profile-username">שם משתמש בקהילה</label>
+                <input
+                  id="profile-username"
+                  dir="ltr"
+                  maxLength={25}
+                  autoComplete="off"
+                  value={username}
+                  disabled={busy}
+                  onChange={(event) => {
+                    setUsername(event.target.value);
+                    setNotice('');
+                  }}
+                />
+                <small>
+                  3-24 אותיות באנגלית, ספרות או קו תחתון. שם המשתמש והשם הפרטי יופיעו בחיפוש. אפשר
+                  להשאיר ריק כדי להסיר את שם המשתמש.
+                </small>
+                <div className={styles.actions}>
+                  <button
+                    type="submit"
+                    disabled={busy || username === (profile.person.username ?? '')}
+                    aria-busy={busy}
+                  >
+                    {busy ? 'שומרים…' : notice ? 'נשמר' : 'שמירת שם משתמש'}
+                  </button>
+                </div>
+                {notice && <p role="status">{notice}</p>}
+              </form>
+            </div>
           )}
           <h2>מתכונים ציבוריים</h2>
           {profile.recipes.length ? (
             <div className={styles.resultGrid}>
               {profile.recipes.map((recipe) => (
-                <RecipeCard key={recipe._id} recipe={recipe} />
+                <CommunityPost key={recipe._id} recipe={recipe} />
               ))}
             </div>
           ) : (

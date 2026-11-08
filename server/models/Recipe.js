@@ -2,6 +2,13 @@ import mongoose from 'mongoose';
 
 const Schema = mongoose.Schema;
 
+const commentSchema = new Schema({
+  _id: String,
+  author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  text: { type: String, required: true, maxlength: 600 },
+  createdAt: { type: Date, required: true },
+});
+
 const recipesSchema = new Schema(
   {
     title: { type: String, required: true },
@@ -18,6 +25,8 @@ const recipesSchema = new Schema(
     steps: { type: [String], required: true },
 
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    likes: { type: [Schema.Types.ObjectId], select: false },
+    comments: { type: [commentSchema], select: false },
   },
   { timestamps: true }
 );

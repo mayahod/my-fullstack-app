@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import styles from './RecipePage.module.css';
 import { API_BASE } from '../../services/config';
 import { useAuth } from '../../context/AuthContext';
+import RecipeDiscussion from './RecipeDiscussion';
 
 const displayText = (value) => value.replace(/[\u05be\u2012-\u2015]/g, '-');
 
@@ -40,31 +41,38 @@ function RecipePage() {
     <div className={styles.container}>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {!recipe && !error ? (
-        <p>...טוען מתכון</p>
+        <p role="status">טוענים את המתכון…</p>
       ) : recipe ? (
-        <div>
-          <h1 className={styles.title}>{recipe.title}</h1>
-          {recipe.totalMinutes && <p>זמן כולל משוער: כ-{recipe.totalMinutes} דקות</p>}
-          {recipe.isPublic && recipe.createdBy && (
-            <Link to={`/people/${recipe.createdBy}`}>לפרופיל היוצר</Link>
-          )}
-
-          <h3 className={styles.subtitle}>מצרכים:</h3>
-          <ul className={styles.ingredientsList}>
-            {recipe.ingredients &&
-              recipe.ingredients.map((item, index) => <li key={index}>{displayText(item)}</li>)}
-          </ul>
-
-          <h3 className={styles.subtitle}>אופן ההכנה:</h3>
-          <ol className={styles.stepsList}>
-            {recipe.steps &&
-              recipe.steps.map((step, index) => <li key={index}>{displayText(step)}</li>)}
-          </ol>
-
+        <article className={styles.recipe}>
+          <header className={styles.header}>
+            <p className={styles.category}>{recipe.category}</p>
+            <h1 className={styles.title}>{recipe.title}</h1>
+            {recipe.totalMinutes && <p>זמן כולל משוער: כ-{recipe.totalMinutes} דקות</p>}
+            {recipe.isPublic && recipe.createdBy && (
+              <Link to={`/people/${recipe.createdBy}`}>לפרופיל היוצר</Link>
+            )}
+          </header>
           {recipe.imageUrl && (
             <img src={recipe.imageUrl} alt={recipe.title} className={styles.image} />
           )}
-        </div>
+          <div className={styles.content}>
+            <section>
+              <h2 className={styles.subtitle}>מצרכים</h2>
+              <ul className={styles.ingredientsList}>
+                {recipe.ingredients &&
+                  recipe.ingredients.map((item, index) => <li key={index}>{displayText(item)}</li>)}
+              </ul>
+            </section>
+            <section>
+              <h2 className={styles.subtitle}>אופן ההכנה</h2>
+              <ol className={styles.stepsList}>
+                {recipe.steps &&
+                  recipe.steps.map((step, index) => <li key={index}>{displayText(step)}</li>)}
+              </ol>
+            </section>
+          </div>
+          {recipe.isPublic && <RecipeDiscussion key={`${id}:${token ?? ''}`} id={id} />}
+        </article>
       ) : null}
     </div>
   );

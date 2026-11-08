@@ -329,6 +329,52 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
       assert.equal(feed.following.length, 1);
       assert.equal(feed.recipes.find((recipe) => recipe._id === visibleId).totalMinutes, 18);
       assert.ok(!feed.recipes.some((recipe) => recipe._id === privateRecipe.body.recipe._id));
+
+      const postPath = '/api/community/posts/' + visibleId;
+      const likePath = postPath + '/like';
+      const commentsPath = postPath + '/comments';
+      const comment = { id: randomUUID(), text: '  מתכון מצוין!  ' };
+      assert.equal((await request(likePath, 'PUT')).status, 401);
+      assert.equal((await request(commentsPath, 'POST', comment)).status, 401);
+      assert.equal(
+        (await request(commentsPath, 'POST', { ...comment, text: '  ' }, follower)).status,
+        400
+      );
+      const likes = await Promise.all([
+        request(likePath, 'PUT', undefined, follower),
+        request(likePath, 'PUT', undefined, follower),
+      ]);
+      for (const like of likes) {
+        assert.equal(like.status, 200);
+        assert.deepEqual(like.body, { liked: true, likeCount: 1 });
+      }
+      const posted = await request(commentsPath, 'POST', comment, follower);
+      assert.equal(posted.status, 201);
+      assert.equal(posted.body.comment.text, 'מתכון מצוין!');
+      assert.equal((await request(commentsPath, 'POST', comment, follower)).status, 200);
+      const discussion = (await request(postPath)).body;
+      assert.equal(discussion.liked, false);
+      assert.equal(discussion.likeCount, 1);
+      assert.equal(discussion.comments.length, 1);
+      assert.equal(discussion.comments[0].canDelete, false);
+      assert.equal(discussion.comments[0].author.email, undefined);
+      const post = (await request(feedPath, 'GET', undefined, follower)).body.recipes.find(
+        (recipe) => recipe._id === visibleId
+      );
+      assert.equal(post.liked, true);
+      assert.equal(post.likeCount, 1);
+      assert.equal(post.commentCount, 1);
+      assert.equal(post.likes, undefined);
+      assert.equal(post.comments, undefined);
+      assert.deepEqual((await request(likePath, 'DELETE', undefined, follower)).body, {
+        liked: false,
+        likeCount: 0,
+      });
+      assert.equal(
+        (await request(commentsPath + '/' + comment.id, 'DELETE', undefined, token)).status,
+        200
+      );
+      assert.deepEqual((await request(postPath)).body.comments, []);
       const cleared = await request(
         `/api/recipes/${visibleId}`,
         'PATCH',
@@ -338,6 +384,9 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
       assert.equal(cleared.status, 200);
       assert.equal(cleared.body.recipe.totalMinutes, null);
       await request(`/api/recipes/${visibleId}`, 'PATCH', { isPublic: false }, token);
+      assert.equal((await request(postPath, 'GET', undefined, token)).status, 404);
+      assert.equal((await request(likePath, 'PUT', undefined, follower)).status, 404);
+      assert.equal((await request(commentsPath, 'POST', comment, follower)).status, 404);
       assert.ok(
         !(await request(feedPath, 'GET', undefined, follower)).body.recipes.some(
           (recipe) => recipe._id === visibleId
@@ -373,6 +422,29 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
         assert.deepEqual((await request(search)).body.people, [saved.body.person]);
         const profile = '/api/community/people/' + saved.body.person.id;
         assert.equal((await request(profile)).status, 200);
+        const avatarPath = '/api/community/profile/avatar';
+        const image =
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jf2sAAAAASUVORK5CYII=';
+        const avatar = 'data:image/png;base64,' + image;
+        assert.equal((await request(avatarPath, 'PUT', { avatar })).status, 401);
+        assert.equal(
+          (await request(avatarPath, 'PUT', { avatar: 'https://example.com/' }, otherToken)).status,
+          400
+        );
+        const photo = await request(avatarPath, 'PUT', { avatar }, otherToken);
+        assert.equal(photo.status, 200);
+        assert.equal(photo.body.person.avatar, undefined);
+        assert.equal(
+          (await request(search)).body.people[0].avatarVersion,
+          photo.body.person.avatarVersion
+        );
+        const imageUrl = base + profile + '/avatar?v=' + photo.body.person.avatarVersion;
+        const downloaded = await fetch(imageUrl);
+        assert.equal(downloaded.status, 200);
+        assert.equal(downloaded.headers.get('content-type'), 'image/png');
+        assert.equal(Buffer.from(await downloaded.arrayBuffer()).toString('base64'), image);
+        assert.equal((await request(avatarPath, 'DELETE', undefined, otherToken)).status, 200);
+        assert.equal((await fetch(imageUrl)).status, 404);
         assert.equal((await request(profile + '/follow', 'PUT', undefined, token)).status, 200);
         await request(profile + '/follow', 'DELETE', undefined, token);
         assert.equal((await request(update, 'PATCH', { username: '' }, otherToken)).status, 200);

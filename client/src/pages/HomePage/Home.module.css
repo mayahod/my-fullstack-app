@@ -351,13 +351,15 @@
   align-items: stretch;
   background: #fff;
 }
-.card a {
+.card a,
+.postCard a {
   display: block;
   height: 100%;
   text-decoration: none;
   color: inherit;
 }
-.card img {
+.card img,
+.postCard img {
   display: block;
   height: 200px;
   width: 100%;
@@ -365,10 +367,15 @@
   margin: 0;
   background: #f1e7eb;
 }
-.card h3 {
+.card h3,
+.postCard h3 {
   margin: 18px 20px 4px;
   color: #453a40;
   font-size: 1.2rem;
+}
+.postCard img {
+  height: auto;
+  aspect-ratio: 16 / 9;
 }
 .category {
   margin: 0 20px 18px;

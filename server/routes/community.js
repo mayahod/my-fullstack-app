@@ -1,16 +1,17 @@
 import express from 'express';
+import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 import { optionalAuth, requireAuth } from '../auth.js';
 import { publicRecipes } from '../controllers/recipeController.js';
 import Recipe from '../models/Recipe.js';
 import User from '../models/User.js';
 import { rateLimit } from '../rateLimit.js';
+import { communityPosts, postRoutes } from './communityPosts.js';
+import { authorFields, publicAuthor } from '../services/publicAuthor.js';
 
 const router = express.Router();
-const publicAuthor = ({ _id, firstName, username }) => ({ id: _id, firstName, username });
 const fail = (res) => res.status(500).json({ message: 'לא ניתן לטעון את הקהילה כרגע' });
 const notFound = (res) => res.status(404).json({ message: 'הפרופיל לא נמצא' });
-const authorFields = 'firstName username';
 const getFollowing = async (id) => {
   const user = await User.findById(id).select('+following').lean();
   return user?.following ?? [];
@@ -41,7 +42,7 @@ router.get('/people', async (req, res) => {
   try {
     const people = await User.aggregate([
       { $match: search },
-      { $project: { firstName: 1, username: 1 } },
+      { $project: { firstName: 1, username: 1, avatarVersion: 1 } },
       { $sort: { firstName: 1, _id: 1 } },
       {
         $lookup: {
@@ -93,10 +94,7 @@ router.get('/feed', requireAuth, async (req, res) => {
   try {
     const ids = await getFollowing(req.user._id);
     const [recipes, people] = await Promise.all([
-      Recipe.find({ ...publicRecipes, createdBy: { $in: ids } })
-        .sort({ createdAt: -1, _id: -1 })
-        .limit(60)
-        .lean(),
+      communityPosts({ $in: ids }, req.user._id),
       User.find({ _id: { $in: ids } })
         .select(authorFields)
         .lean(),
@@ -120,15 +118,73 @@ router.param('id', (req, res, next, id) => {
   next();
 });
 
+const limitAvatar = rateLimit({ limit: 15, keyFor: (req) => String(req.user._id) });
+const png = /^data:image\/png;base64,([A-Za-z0-9+/]+={0,2})$/;
+
+router.put('/profile/avatar', requireAuth, limitAvatar, async (req, res) => {
+  const avatar = req.body?.avatar;
+  const base64 = typeof avatar === 'string' && avatar.length <= 92_000 && png.exec(avatar)?.[1];
+  const bytes = base64 && Buffer.from(base64, 'base64');
+  if (
+    !bytes ||
+    bytes.length < 45 ||
+    bytes.toString('base64') !== base64 ||
+    bytes.subarray(0, 16).toString('hex') !== '89504e470d0a1a0a0000000d49484452' ||
+    ![bytes.readUInt32BE(16), bytes.readUInt32BE(20)].every((size) => size >= 1 && size <= 128) ||
+    bytes.subarray(-12).toString('hex') !== '0000000049454e44ae426082'
+  ) {
+    return res.status(400).json({ message: 'התמונה לא תקינה. בחרו תמונה אחרת.' });
+  }
+  try {
+    const person = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { avatar, avatarVersion: randomUUID() } },
+      { new: true }
+    )
+      .select(authorFields)
+      .lean();
+    if (!person) return notFound(res);
+    res.json({ person: publicAuthor(person) });
+  } catch {
+    return fail(res);
+  }
+});
+
+router.delete('/profile/avatar', requireAuth, limitAvatar, async (req, res) => {
+  try {
+    const person = await User.findByIdAndUpdate(
+      req.user._id,
+      { $unset: { avatar: 1, avatarVersion: 1 } },
+      { new: true }
+    )
+      .select(authorFields)
+      .lean();
+    if (!person) return notFound(res);
+    res.json({ person: publicAuthor(person) });
+  } catch {
+    return fail(res);
+  }
+});
+
+router.get('/people/:id/avatar', async (req, res) => {
+  try {
+    const person = await User.findById(req.params.id).select('avatarVersion +avatar').lean();
+    if (!person?.avatar || person.avatarVersion !== req.query.v) return notFound(res);
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.type('png').send(Buffer.from(person.avatar.split(',')[1], 'base64'));
+  } catch {
+    return fail(res);
+  }
+});
+
+router.use('/posts', postRoutes);
+
 router.get('/people/:id', optionalAuth, async (req, res) => {
   try {
     const id = req.params.id.toLowerCase();
     const [person, recipes, following] = await Promise.all([
       User.findById(id).select(authorFields).lean(),
-      Recipe.find({ ...publicRecipes, createdBy: id })
-        .sort({ createdAt: -1 })
-        .limit(60)
-        .lean(),
+      communityPosts(new mongoose.Types.ObjectId(id), req.user?._id),
       req.user ? getFollowing(req.user._id) : [],
     ]);
     const isOwner = String(req.user?._id) === id;

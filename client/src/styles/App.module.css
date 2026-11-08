@@ -32,9 +32,14 @@
   font-weight: 600;
   padding: 8px 10px;
   border-radius: 8px;
+  background: transparent;
 }
 .appLink:hover {
   background: #f9edf2;
+}
+.appLink[aria-current='page'] {
+  background: #fae6ef;
+  color: #792849;
 }
 .main {
   padding: 28px 24px 60px;

@@ -1,9 +1,9 @@
 import styles from '../pages/HomePage/Home.module.css';
 import { Link } from 'react-router-dom';
 
-function RecipeCard({ recipe }) {
+function RecipeCard({ recipe, variant }) {
   return (
-    <article className={styles.card}>
+    <article className={variant === 'post' ? styles.postCard : styles.card}>
       <Link to={`/recipes/${recipe._id}`}>
         {recipe.imageUrl && (
           <img

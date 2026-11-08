@@ -2,18 +2,22 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { communityRequest } from '../../services/community';
-import RecipeCard from '../../components/RecipeCard';
+import Avatar from '../../components/Avatar';
+import CommunityPost from '../../components/CommunityPost';
 import styles from '../../styles/Discovery.module.css';
 
 function PersonLink({ person }) {
   return (
     <Link className={styles.person} to={`/people/${person.id}`}>
-      {person.firstName}{' '}
-      {person.username && (
-        <bdi className={styles.handle} dir="ltr">
-          @{person.username}
-        </bdi>
-      )}
+      <Avatar person={person} size={36} />
+      <span>
+        {person.firstName}
+        {person.username && (
+          <bdi className={styles.handle} dir="ltr">
+            @{person.username}
+          </bdi>
+        )}
+      </span>
     </Link>
   );
 }
@@ -65,9 +69,11 @@ export default function Community() {
         <h1>קהילת המתכונים</h1>
         <p>גלו יוצרים, עקבו אחריהם וקבלו את המתכונים החדשים שלהם בפיד האישי.</p>
         <div className={styles.actions}>
-          <Link className={styles.textLink} to="/add">
-            פרסום מתכון
-          </Link>
+          {isAuth && (
+            <Link className={styles.primaryLink} to="/add">
+              פרסום מתכון
+            </Link>
+          )}
           {user && (
             <Link className={styles.textLink} to={`/people/${user.id}`}>
               הפרופיל שלי
@@ -106,14 +112,7 @@ export default function Community() {
             ) : (
               <div className={styles.resultGrid}>
                 {feed.recipes.map((recipe) => (
-                  <div className={styles.feedCard} key={recipe._id}>
-                    <RecipeCard recipe={recipe} />
-                    {recipe.author && (
-                      <Link className={styles.textLink} to={`/people/${recipe.author.id}`}>
-                        {recipe.author.firstName}
-                      </Link>
-                    )}
-                  </div>
+                  <CommunityPost key={recipe._id} recipe={recipe} />
                 ))}
               </div>
             )}

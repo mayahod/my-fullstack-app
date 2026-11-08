@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import HomePage from './pages/HomePage/HomePage';
 import styles from './styles/App.module.css';
 import RecipePage from './pages/RecipePage/RecipePage';
@@ -25,38 +25,34 @@ function AppHeader() {
 
   return (
     <header className={styles.appHeader}>
-      <nav className={styles.appNav}>
-        <Link to="/" className={styles.appLink}>
+      <nav className={styles.appNav} aria-label="ניווט ראשי">
+        <NavLink to="/" className={styles.appLink}>
           בית
-        </Link>
-        <Link to="/pantry" className={styles.appLink}>
+        </NavLink>
+        <NavLink to="/pantry" className={styles.appLink}>
           מה יש במקרר?
-        </Link>
-        <Link to="/community" className={styles.appLink}>
+        </NavLink>
+        <NavLink to="/community" className={styles.appLink}>
           קהילה
-        </Link>
+        </NavLink>
 
         {!isAuth && (
           <>
-            <Link to="/login" className={styles.appLink}>
+            <NavLink to="/login" className={styles.appLink}>
               התחברות
-            </Link>
-            <Link to="/register" className={styles.appLink}>
+            </NavLink>
+            <NavLink to="/register" className={styles.appLink}>
               הרשמה
-            </Link>
+            </NavLink>
           </>
         )}
 
         {isAuth && (
           <>
-            <Link to="/dashboard" className={styles.appLink}>
+            <NavLink to="/dashboard" className={styles.appLink}>
               אזור אישי
-            </Link>
-            <button
-              onClick={onLogout}
-              className={styles.appLink}
-              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-            >
+            </NavLink>
+            <button onClick={onLogout} className={styles.appLink}>
               התנתקות{user?.firstName ? ` (${user.firstName})` : ''}
             </button>
           </>

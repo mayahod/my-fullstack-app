@@ -84,7 +84,8 @@ const createRecipe = async (req, res) => {
       createdBy,
     });
 
-    res.status(201).json({ recipe });
+    const { likes, comments, ...created } = recipe.toObject();
+    res.status(201).json({ recipe: created });
   } catch (err) {
     console.error('Error creating recipe:', err.message);
     res.status(400).json({ mssg: 'Error creating recipe', err });

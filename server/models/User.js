@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   passwordVersion: { type: Number, default: 0 },
   username: { type: String, match: /^[a-z0-9_]{3,24}$/ },
+  avatar: { type: String, select: false },
+  avatarVersion: { type: String },
   following: { type: [mongoose.Schema.Types.ObjectId], ref: 'User', select: false },
   resetTokenHash: { type: String, select: false },
   resetTokenExpires: { type: Date, select: false },
