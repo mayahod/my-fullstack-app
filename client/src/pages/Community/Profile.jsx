@@ -52,6 +52,7 @@ export default function Profile() {
 
   const saveUsername = async (event) => {
     event.preventDefault();
+    if (busy || username === (profile.person.username ?? '')) return;
     setBusy(true);
     setError('');
     setNotice('');
@@ -124,18 +125,23 @@ export default function Profile() {
                 maxLength={25}
                 autoComplete="off"
                 value={username}
-                onChange={(event) => setUsername(event.target.value)}
+                disabled={busy}
+                onChange={(event) => {
+                  setUsername(event.target.value);
+                  setNotice('');
+                }}
               />
               <small>
-                3–24 אותיות באנגלית, ספרות או קו תחתון. שם המשתמש והשם הפרטי יופיעו בחיפוש. אפשר
+                3-24 אותיות באנגלית, ספרות או קו תחתון. שם המשתמש והשם הפרטי יופיעו בחיפוש. אפשר
                 להשאיר ריק כדי להסיר את שם המשתמש.
               </small>
               <div className={styles.actions}>
                 <button
                   type="submit"
                   disabled={busy || username === (profile.person.username ?? '')}
+                  aria-busy={busy}
                 >
-                  {busy ? 'שומרים…' : 'שמירת שם משתמש'}
+                  {busy ? 'שומרים…' : notice ? 'נשמר' : 'שמירת שם משתמש'}
                 </button>
               </div>
               {notice && <p role="status">{notice}</p>}

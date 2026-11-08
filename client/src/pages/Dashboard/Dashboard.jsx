@@ -139,8 +139,8 @@ function Dashboard() {
                 <h2>{recipe.title}</h2>
               </Link>
               <p>
-                {recipe.category} · {recipe.isPublic ? 'ציבורי' : 'פרטי — רק שלך'}
-                {recipe.totalMinutes ? ` · כ־${recipe.totalMinutes} דקות` : ''}
+                {recipe.category} · {recipe.isPublic ? 'ציבורי' : 'פרטי - רק שלך'}
+                {recipe.totalMinutes ? ` · כ-${recipe.totalMinutes} דקות` : ''}
               </p>
               <div className={styles.actions}>
                 <button onClick={() => edit(recipe)}>עריכה</button>
@@ -183,7 +183,7 @@ function Dashboard() {
                 </select>
               </label>
               <label>
-                מצרכים — כל מצרך בשורה נפרדת
+                מצרכים - כל מצרך בשורה נפרדת
                 <textarea
                   name="ingredients"
                   rows={5}
@@ -193,7 +193,7 @@ function Dashboard() {
                 />
               </label>
               <label>
-                אופן ההכנה — כל שלב בשורה נפרדת
+                אופן ההכנה - כל שלב בשורה נפרדת
                 <textarea name="steps" rows={5} value={form.steps} onChange={change} required />
               </label>
               <label>

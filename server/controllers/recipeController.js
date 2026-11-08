@@ -163,7 +163,7 @@ const updateRecipe = async (req, res) => {
 const validDuration = (value) =>
   value == null || (Number.isInteger(value) && value >= 1 && value <= 1440);
 const invalidDuration = (res) =>
-  res.status(400).json({ message: 'זמן הכנה צריך להיות בין 1 ל־1440 דקות' });
+  res.status(400).json({ message: 'זמן הכנה צריך להיות בין 1 ל-1440 דקות' });
 
 export {
   getMyRecipes,

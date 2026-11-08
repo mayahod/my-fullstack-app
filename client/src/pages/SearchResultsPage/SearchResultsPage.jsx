@@ -33,7 +33,7 @@ const SearchResultsPage = () => {
 
   return (
     <div className={styles.resultsPage}>
-      <h1 className={styles.title}>תוצאות עבור: {query || '—'}</h1>
+      <h1 className={styles.title}>תוצאות עבור: {query || '-'}</h1>
 
       {isLoading ? (
         <p>טוען תוצאות…</p>

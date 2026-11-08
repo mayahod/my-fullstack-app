@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react';
 import styles from './RecipePage.module.css';
 import { API_BASE } from '../../services/config';
 import { useAuth } from '../../context/AuthContext';
+
+const displayText = (value) => value.replace(/[\u05be\u2012-\u2015]/g, '-');
+
 function RecipePage() {
   const { id } = useParams();
   const { token } = useAuth();
@@ -41,7 +44,7 @@ function RecipePage() {
       ) : recipe ? (
         <div>
           <h1 className={styles.title}>{recipe.title}</h1>
-          {recipe.totalMinutes && <p>זמן כולל משוער: כ־{recipe.totalMinutes} דקות</p>}
+          {recipe.totalMinutes && <p>זמן כולל משוער: כ-{recipe.totalMinutes} דקות</p>}
           {recipe.isPublic && recipe.createdBy && (
             <Link to={`/people/${recipe.createdBy}`}>לפרופיל היוצר</Link>
           )}
@@ -49,12 +52,13 @@ function RecipePage() {
           <h3 className={styles.subtitle}>מצרכים:</h3>
           <ul className={styles.ingredientsList}>
             {recipe.ingredients &&
-              recipe.ingredients.map((item, index) => <li key={index}>{item}</li>)}
+              recipe.ingredients.map((item, index) => <li key={index}>{displayText(item)}</li>)}
           </ul>
 
           <h3 className={styles.subtitle}>אופן ההכנה:</h3>
           <ol className={styles.stepsList}>
-            {recipe.steps && recipe.steps.map((step, index) => <li key={index}>{step}</li>)}
+            {recipe.steps &&
+              recipe.steps.map((step, index) => <li key={index}>{displayText(step)}</li>)}
           </ol>
 
           {recipe.imageUrl && (

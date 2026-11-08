@@ -21,7 +21,7 @@ function RecipeCard({ recipe }) {
         <h3>{recipe.title}</h3>
         <p className={styles.category}>
           {recipe.category || 'מתכון ביתי'}
-          {recipe.totalMinutes ? ` · כ־${recipe.totalMinutes} דקות` : ''}
+          {recipe.totalMinutes ? ` · כ-${recipe.totalMinutes} דקות` : ''}
         </p>
       </Link>
     </article>

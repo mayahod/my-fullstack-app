@@ -61,7 +61,7 @@ export default function ResetPassword() {
         </div>
       ) : (
         <form className={styles.form} onSubmit={submit}>
-          <label htmlFor="new-password">סיסמה חדשה — לפחות 8 תווים</label>
+          <label htmlFor="new-password">סיסמה חדשה - לפחות 8 תווים</label>
           <input
             id="new-password"
             type="password"

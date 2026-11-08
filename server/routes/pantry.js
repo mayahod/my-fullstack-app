@@ -92,6 +92,7 @@ router.post(
         .filter((part) => !part.thought && typeof part.text === 'string')
         .map((part) => part.text)
         .join('\n')
+        .replace(/[\u05be\u2012-\u2015]/g, '-')
         .trim();
       if (answer) return res.json({ answer: answer.slice(0, 3000) });
     } catch (error) {

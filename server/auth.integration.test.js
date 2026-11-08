@@ -407,7 +407,10 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
                 candidates: [
                   {
                     content: {
-                      parts: [{ thought: true, text: 'hidden' }, { text: 'שקשוקה · כ־20 דקות' }],
+                      parts: [
+                        { thought: true, text: 'hidden' },
+                        { text: 'שקשוקה · כ\u05be20 דקות' },
+                      ],
                     },
                   },
                 ],
@@ -425,7 +428,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
           assert.equal(calls, 0);
           const result = await request('/api/pantry/chat', 'POST', { messages });
           assert.equal(result.status, 200);
-          assert.deepEqual(result.body, { answer: 'שקשוקה · כ־20 דקות' });
+          assert.deepEqual(result.body, { answer: 'שקשוקה · כ-20 דקות' });
           assert.equal(calls, 1);
         } finally {
           globalThis.fetch = originalFetch;

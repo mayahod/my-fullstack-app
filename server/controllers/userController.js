@@ -90,7 +90,7 @@ export const forgotPassword = async (req, res) => {
       return res.status(503).json({ message: 'שירות המייל טרם הוגדר. לא נשלח מייל.' });
     }
     const message =
-      'אם קיים חשבון עם האימייל הזה, יישלח אליו קישור לאיפוס סיסמה. הקישור תקף ל־30 דקות.';
+      'אם קיים חשבון עם האימייל הזה, יישלח אליו קישור לאיפוס סיסמה. הקישור תקף ל-30 דקות.';
     const rawToken = randomBytes(32).toString('hex');
     const hash = createHash('sha256').update(rawToken).digest('hex');
     const now = new Date();

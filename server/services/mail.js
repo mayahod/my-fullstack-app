@@ -25,8 +25,8 @@ export function mailConfigured() {
 export async function sendPasswordResetEmail({ to, resetUrl }) {
   if (!mailConfigured()) throw new Error('Password reset mail is not configured');
   const brevo = !!process.env.BREVO_API_KEY;
-  const subject = 'איפוס סיסמה — ספר המתכונים שלנו';
-  const text = `לבחירת סיסמה חדשה פתחו את הקישור הבא:\n${resetUrl}\n\nהקישור תקף ל־30 דקות ולשימוש אחד בלבד. אם לא ביקשתם לאפס סיסמה, אפשר להתעלם מההודעה.`;
+  const subject = 'איפוס סיסמה - ספר המתכונים שלנו';
+  const text = `לבחירת סיסמה חדשה פתחו את הקישור הבא:\n${resetUrl}\n\nהקישור תקף ל-30 דקות ולשימוש אחד בלבד. אם לא ביקשתם לאפס סיסמה, אפשר להתעלם מההודעה.`;
   const match = process.env.MAIL_FROM.match(/^\s*(.*?)\s*<([^<>]+)>\s*$/);
   const sender = match
     ? { name: match[1].trim(), email: match[2].trim() }
@@ -52,7 +52,7 @@ export async function sendPasswordResetEmail({ to, resetUrl }) {
               to: [{ email: to }],
               subject,
               textContent: text,
-              htmlContent: `<html lang="he" dir="rtl"><body><h1>איפוס סיסמה</h1><p><a href="${safeUrl}">לבחירת סיסמה חדשה</a></p><p>הקישור תקף ל־30 דקות ולשימוש אחד בלבד. אם לא ביקשתם איפוס, אפשר להתעלם מההודעה.</p></body></html>`,
+              htmlContent: `<html lang="he" dir="rtl"><body><h1>איפוס סיסמה</h1><p><a href="${safeUrl}">לבחירת סיסמה חדשה</a></p><p>הקישור תקף ל-30 דקות ולשימוש אחד בלבד. אם לא ביקשתם איפוס, אפשר להתעלם מההודעה.</p></body></html>`,
             }
           : {
               from: process.env.MAIL_FROM,

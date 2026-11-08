@@ -56,6 +56,9 @@ button {
 }
 button:disabled {
   opacity: 0.6;
+  cursor: default;
+}
+button:disabled[aria-busy='true'] {
   cursor: wait;
 }
 input,

@@ -70,7 +70,7 @@ router.patch('/profile', requireAuth, rateLimit({ limit: 12 }), async (req, res)
   }
   const username = value.trim().replace(/^@/, '').toLowerCase();
   if (username && !/^[a-z0-9_]{3,24}$/.test(username)) {
-    return res.status(400).json({ message: 'בחרו 3–24 אותיות באנגלית, ספרות או קו תחתון' });
+    return res.status(400).json({ message: 'בחרו 3-24 אותיות באנגלית, ספרות או קו תחתון' });
   }
   try {
     await User.init();
