@@ -4,7 +4,8 @@ import { OAuth2Client } from 'google-auth-library';
 import { randomBytes, createHash } from 'node:crypto';
 import { mailConfigured, publicAppUrl, sendPasswordResetEmail } from '../services/mail.js';
 
-import { publicUser, userSession } from '../auth.js';
+import { clearSessionCookie, publicUser, startSession } from '../auth.js';
+import { clearLoginFailures, reserveLogin } from '../loginLimit.js';
 const BCRYPT_ROUNDS = 10;
 const RESET_TOKEN_TTL_MS = 30 * 60_000;
 const RESET_REQUEST_COOLDOWN_MS = 60_000;
@@ -52,7 +53,7 @@ export const loginWithGoogle = async (req, res) => {
   try {
     await User.init();
     const linked = await User.findOne({ googleSubject });
-    if (linked) return res.json(userSession(linked));
+    if (linked) return await startSession(req, res, linked);
 
     // Google can vouch for current mailbox ownership for Gmail and Workspace addresses.
     if (!email.endsWith('@gmail.com') && !hd)
@@ -67,12 +68,15 @@ export const loginWithGoogle = async (req, res) => {
       firstName: given_name?.trim().slice(0, 100) || 'משתמש Google',
       lastName: family_name?.trim().slice(0, 100),
     });
-    return res.json(userSession(user));
+    return await startSession(req, res, user);
   } catch (error) {
     if (error.code === 11000) {
       // Simultaneous first sign-ins with the same Google account share one user.
       const linked = await User.findOne({ googleSubject }).catch(() => null);
-      if (linked) return res.json(userSession(linked));
+      if (linked)
+        return startSession(req, res, linked).catch(() =>
+          res.status(500).json({ message: 'שגיאה בשרת, נסו שוב מאוחר יותר' })
+        );
       return res.status(409).json({ message: googleConflict });
     }
     return res.status(500).json({ message: 'שגיאה בשרת, נסו שוב מאוחר יותר' });
@@ -154,13 +158,21 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'נא להזין אימייל וסיסמה תקינים' });
     }
 
+    const reservation = await reserveLogin(req.ip, email);
+    if (reservation.retryAfter) {
+      res.set('Retry-After', String(reservation.retryAfter));
+      return res
+        .status(429)
+        .json({ message: 'בוצעו יותר מדי ניסיונות כניסה. נא להמתין ולנסות שוב.' });
+    }
     const user = await User.findOne({ email });
     if (!user?.password) return res.status(401).json({ message: 'האימייל או הסיסמה שגויים' });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'האימייל או הסיסמה שגויים' });
 
-    res.status(200).json(userSession(user));
+    await clearLoginFailures(reservation);
+    return await startSession(req, res, user);
   } catch (error) {
     res.status(500).json({ message: 'שגיאה בשרת, נסו שוב מאוחר יותר' });
   }
@@ -240,10 +252,12 @@ export const resetPassword = async (req, res) => {
     );
     if (!user)
       return res.status(400).json({ message: 'הקישור אינו תקין או שפג תוקפו. בקשו קישור חדש.' });
+    clearSessionCookie(req, res);
     return res.json({ message: 'הסיסמה עודכנה בהצלחה. כעת אפשר להתחבר עם הסיסמה החדשה.' });
   } catch {
     return res.status(500).json({ message: 'שגיאה בשרת. נסו שוב מאוחר יותר.' });
   }
 };
 
-export const currentUser = (req, res) => res.json({ user: publicUser(req.user) });
+export const currentUser = (req, res) =>
+  res.json({ user: publicUser(req.user), expiresAt: req.sessionExpiresAt });

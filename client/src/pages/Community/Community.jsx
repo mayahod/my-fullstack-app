@@ -7,13 +7,13 @@ import CommunityPost from '../../components/CommunityPost';
 import shared from '../../styles/Discovery.module.css';
 import styles from './Community.module.css';
 
-function useCommunityData(path, token) {
+function useCommunityData(path, viewerId) {
   const [result, setResult] = useState(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!path) return;
     const controller = new AbortController();
-    communityRequest(path, { token, signal: controller.signal })
+    communityRequest(path, { signal: controller.signal })
       .then((data) => {
         if (!controller.signal.aborted) setResult({ path, data });
       })
@@ -21,7 +21,7 @@ function useCommunityData(path, token) {
         if (!controller.signal.aborted) setResult({ path, error: err.message });
       });
     return () => controller.abort();
-  }, [path, token, attempt]);
+  }, [path, viewerId, attempt]);
 
   const current = result?.path === path ? result : null;
   return {
@@ -144,17 +144,17 @@ function PeopleDirectory({ user, following, onFollow, busyId, followError, retry
   );
 }
 
-function CommunityViews({ user, token }) {
+function CommunityViews({ user }) {
   const [params] = useSearchParams();
   const view = params.get('view');
   const currentView = view === 'people' || view === 'discover' ? view : user ? 'feed' : 'discover';
   const [busyId, setBusyId] = useState('');
   const [followError, setFollowError] = useState('');
-  const feed = useCommunityData(user ? '/feed' : null, token);
+  const feed = useCommunityData(user ? '/feed' : null, user?.id);
   const emptyFeed = currentView === 'feed' && feed.data?.recipes.length === 0;
   const discover = useCommunityData(
     currentView === 'discover' || emptyFeed ? '/discover' : null,
-    token
+    user?.id
   );
 
   async function toggleFollow(person, followed) {
@@ -163,7 +163,6 @@ function CommunityViews({ user, token }) {
     setFollowError('');
     try {
       const { isFollowing } = await communityRequest('/people/' + person.id + '/follow', {
-        token,
         method: followed ? 'DELETE' : 'PUT',
       });
       const following = feed.data.following.filter(({ id }) => id !== person.id);
@@ -290,12 +289,6 @@ function CommunityViews({ user, token }) {
 }
 
 export default function Community() {
-  const { user, token, isAuth } = useAuth();
-  return (
-    <CommunityViews
-      key={isAuth ? user.id : 'guest'}
-      user={isAuth ? user : null}
-      token={isAuth ? token : undefined}
-    />
-  );
+  const { user, isAuth } = useAuth();
+  return <CommunityViews key={isAuth ? user.id : 'guest'} user={isAuth ? user : null} />;
 }

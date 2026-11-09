@@ -16,6 +16,7 @@ export default defineConfig({
     url: baseURL + '/api/health',
     env: {
       NODE_ENV: 'production',
+      CLIENT_URL: baseURL,
       PORT: '5039',
       MONGO_URI: process.env.E2E_MONGO_URI || 'mongodb://127.0.0.1:27017/recipes_e2e',
       JWT_SECRET: 'browser-tests-only',

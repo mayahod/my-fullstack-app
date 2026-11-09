@@ -28,12 +28,11 @@ function loadGoogle() {
   return scriptReady;
 }
 
-export default function GoogleSignIn({ clientId, token, onSuccess }) {
+export default function GoogleSignIn({ clientId, linking = false, onSuccess }) {
   const target = useRef(null);
   const success = useRef(onSuccess);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
-  const linking = Boolean(token);
 
   useEffect(() => {
     success.current = onSuccess;
@@ -53,10 +52,7 @@ export default function GoogleSignIn({ clientId, token, onSuccess }) {
       try {
         const response = await fetch(`${API_BASE}/api/users/google${linking ? '/link' : ''}`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(linking ? { Authorization: `Bearer ${token}` } : {}),
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ credential }),
           signal,
         });
@@ -93,7 +89,7 @@ export default function GoogleSignIn({ clientId, token, onSuccess }) {
       controller.abort();
       button.replaceChildren();
     };
-  }, [clientId, linking, token]);
+  }, [clientId, linking]);
 
   return (
     <>

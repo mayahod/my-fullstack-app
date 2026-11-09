@@ -9,7 +9,8 @@ import styles from '../../styles/Discovery.module.css';
 const dateFormat = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium' });
 
 export default function RecipeDiscussion({ id }) {
-  const { token } = useAuth();
+  const { user } = useAuth();
+  const viewerId = user?.id;
   const location = useLocation();
   const section = useRef(null);
   const pendingId = useRef(null);
@@ -22,7 +23,7 @@ export default function RecipeDiscussion({ id }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    communityRequest(path, { token, signal: controller.signal })
+    communityRequest(path, { signal: controller.signal })
       .then((data) => {
         if (!controller.signal.aborted) setDiscussion(data);
       })
@@ -30,7 +31,7 @@ export default function RecipeDiscussion({ id }) {
         if (!controller.signal.aborted) setError(err.message);
       });
     return () => controller.abort();
-  }, [path, token, attempt]);
+  }, [path, viewerId, attempt]);
 
   useEffect(() => {
     if (location.hash === '#discussion') section.current?.scrollIntoView({ block: 'start' });
@@ -45,7 +46,6 @@ export default function RecipeDiscussion({ id }) {
       pendingId.current ??= crypto.randomUUID();
       const { comment } = await communityRequest(`${path}/comments`, {
         method: 'POST',
-        token,
         body: { id: pendingId.current, text: draft },
       });
       setDiscussion((current) => ({
@@ -67,7 +67,7 @@ export default function RecipeDiscussion({ id }) {
     setBusy(commentId);
     setError('');
     try {
-      await communityRequest(`${path}/comments/${commentId}`, { method: 'DELETE', token });
+      await communityRequest(`${path}/comments/${commentId}`, { method: 'DELETE' });
       setDiscussion((current) => ({
         ...current,
         comments: current.comments.filter((item) => item.id !== commentId),
@@ -115,7 +115,7 @@ export default function RecipeDiscussion({ id }) {
         )
       ) : (
         <>
-          {token ? (
+          {viewerId ? (
             <form className={styles.commentForm} onSubmit={addComment}>
               <label htmlFor="comment-text">הוספת תגובה</label>
               <textarea
@@ -156,7 +156,7 @@ export default function RecipeDiscussion({ id }) {
                       </time>
                     </div>
                     <p dir="auto">{comment.text}</p>
-                    {token && comment.canDelete && (
+                    {viewerId && comment.canDelete && (
                       <button
                         className={styles.deleteComment}
                         type="button"

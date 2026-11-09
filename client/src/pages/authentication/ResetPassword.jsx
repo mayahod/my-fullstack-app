@@ -14,7 +14,7 @@ export default function ResetPassword() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const { logout } = useAuth();
+  const { clearSession } = useAuth();
   const submit = async (event) => {
     event.preventDefault();
     if (busy) return;
@@ -35,7 +35,7 @@ export default function ResetPassword() {
         setError(data.message || 'לא ניתן לאפס את הסיסמה כרגע');
         return;
       }
-      logout();
+      clearSession();
       window.history.replaceState(null, '', '/reset-password');
       setPassword('');
       setConfirmation('');

@@ -1,11 +1,10 @@
 import { API_BASE } from './config.js';
 
-export async function libraryRequest(token, path = '', { method = 'GET', body, signal } = {}) {
+export async function libraryRequest(path = '', { method = 'GET', body, signal } = {}) {
   const response = await fetch(API_BASE + '/api/library' + path, {
     method,
     signal,
     headers: {
-      Authorization: 'Bearer ' + token,
       ...(body ? { 'Content-Type': 'application/json' } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -15,8 +14,8 @@ export async function libraryRequest(token, path = '', { method = 'GET', body, s
   return data;
 }
 
-export function changeSavedRecipe(token, collectionId, recipeId, adding) {
-  return libraryRequest(token, '/collections/' + collectionId + '/recipes/' + recipeId, {
+export function changeSavedRecipe(collectionId, recipeId, adding) {
+  return libraryRequest('/collections/' + collectionId + '/recipes/' + recipeId, {
     method: adding ? 'PUT' : 'DELETE',
   });
 }

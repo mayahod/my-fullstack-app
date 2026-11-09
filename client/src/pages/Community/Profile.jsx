@@ -10,7 +10,8 @@ import styles from '../../styles/Discovery.module.css';
 export default function Profile() {
   const { id: profileId } = useParams();
   const id = profileId.toLowerCase();
-  const { token, isAuth, user } = useAuth();
+  const { isAuth, user } = useAuth();
+  const viewerId = user?.id;
   const location = useLocation();
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
@@ -23,7 +24,7 @@ export default function Profile() {
     setProfile(null);
     setError('');
     setNotice('');
-    communityRequest(`/people/${encodeURIComponent(id)}`, { token, signal: controller.signal })
+    communityRequest(`/people/${encodeURIComponent(id)}`, { signal: controller.signal })
       .then((data) => {
         if (!controller.signal.aborted) {
           setProfile(data);
@@ -34,14 +35,13 @@ export default function Profile() {
         if (!controller.signal.aborted) setError(err.message);
       });
     return () => controller.abort();
-  }, [id, token]);
+  }, [id, viewerId]);
 
   const toggleFollow = async () => {
     setBusy(true);
     setError('');
     try {
       const { isFollowing } = await communityRequest(`/people/${encodeURIComponent(id)}/follow`, {
-        token,
         method: profile.isFollowing ? 'DELETE' : 'PUT',
       });
       setProfile((current) => (current?.person.id === id ? { ...current, isFollowing } : current));
@@ -60,7 +60,6 @@ export default function Profile() {
     setNotice('');
     try {
       const { person } = await communityRequest('/profile', {
-        token,
         method: 'PATCH',
         body: { username },
       });
@@ -128,7 +127,6 @@ export default function Profile() {
               <ProfilePhoto
                 key={id}
                 person={profile.person}
-                token={token}
                 onSaved={(avatarVersion) => {
                   setProfile((current) =>
                     current?.person.id === id

@@ -26,8 +26,8 @@ const Login = () => {
     setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
   };
 
-  const completeLogin = ({ user, token }) => {
-    login(user, token);
+  const completeLogin = (session) => {
+    login(session);
     const from = location.state?.from;
     const destination =
       from?.pathname?.startsWith('/') && !from.pathname.startsWith('//')

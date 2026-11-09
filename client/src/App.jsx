@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import HomePage from './pages/HomePage/HomePage';
 import styles from './styles/App.module.css';
 import RecipePage from './pages/RecipePage/RecipePage';
@@ -18,11 +19,21 @@ import { FiBookOpen } from 'react-icons/fi';
 
 function AppHeader() {
   const { isAuth, logout } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
   const navigate = useNavigate();
 
-  const onLogout = () => {
-    logout();
-    navigate('/', { replace: true });
+  const onLogout = async () => {
+    setSigningOut(true);
+    setLogoutError('');
+    try {
+      await logout();
+      navigate('/', { replace: true });
+    } catch {
+      setLogoutError('לא ניתן להתנתק כרגע. נסו שוב.');
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   return (
@@ -58,13 +69,14 @@ function AppHeader() {
               <NavLink to="/dashboard" className={styles.appLink}>
                 אזור אישי
               </NavLink>
-              <button onClick={onLogout} className={styles.appLink}>
+              <button onClick={onLogout} disabled={signingOut} className={styles.appLink}>
                 התנתקות
               </button>
             </>
           )}
         </div>
       </nav>
+      {logoutError && <p role="alert">{logoutError}</p>}
     </header>
   );
 }

@@ -14,10 +14,10 @@ export async function searchRecipes(params, signal) {
   return data;
 }
 
-async function myRecipeRequest(path, token, options = {}) {
+async function myRecipeRequest(path, options = {}) {
   const response = await fetch(`${BASE_URL}/api/recipes${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    headers: { 'Content-Type': 'application/json' },
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -34,10 +34,10 @@ async function myRecipeRequest(path, token, options = {}) {
   return data;
 }
 
-export const fetchMyRecipes = (token, signal) => myRecipeRequest('/mine', token, { signal });
-export const updateMyRecipe = (id, recipe, token) =>
-  myRecipeRequest(`/${id}`, token, { method: 'PATCH', body: JSON.stringify(recipe) });
-export const deleteMyRecipe = (id, token) => myRecipeRequest(`/${id}`, token, { method: 'DELETE' });
+export const fetchMyRecipes = (signal) => myRecipeRequest('/mine', { signal });
+export const updateMyRecipe = (id, recipe) =>
+  myRecipeRequest(`/${id}`, { method: 'PATCH', body: JSON.stringify(recipe) });
+export const deleteMyRecipe = (id) => myRecipeRequest(`/${id}`, { method: 'DELETE' });
 
-export const addRecipe = (recipeData, token) =>
-  myRecipeRequest('', token, { method: 'POST', body: JSON.stringify(recipeData) });
+export const addRecipe = (recipeData) =>
+  myRecipeRequest('', { method: 'POST', body: JSON.stringify(recipeData) });

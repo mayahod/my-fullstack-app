@@ -32,7 +32,7 @@ async function preparePhoto(file) {
   }
 }
 
-export default function ProfilePhoto({ person, token, onSaved }) {
+export default function ProfilePhoto({ person, onSaved }) {
   const [preview, setPreview] = useState('');
   const [preparing, setPreparing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -63,7 +63,6 @@ export default function ProfilePhoto({ person, token, onSaved }) {
     setNotice('');
     try {
       const { person: updated } = await communityRequest('/profile/avatar', {
-        token,
         method: remove ? 'DELETE' : 'PUT',
         body: remove ? undefined : { avatar: preview },
       });

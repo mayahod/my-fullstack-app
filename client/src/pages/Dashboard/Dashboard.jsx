@@ -9,7 +9,8 @@ import GoogleSignIn from '../../components/GoogleSignIn';
 import useGoogleClientId from '../../context/useGoogleClientId';
 
 function Dashboard() {
-  const { token, logout, user, login } = useAuth();
+  const { clearSession, user, updateUser } = useAuth();
+  const viewerId = user?.id;
   const location = useLocation();
   const googleClientId = useGoogleClientId();
   const [recipes, setRecipes] = useState([]);
@@ -26,18 +27,18 @@ function Dashboard() {
     const controller = new AbortController();
     setLoading(true);
     setError('');
-    fetchMyRecipes(token, controller.signal)
+    fetchMyRecipes(controller.signal)
       .then((data) => setRecipes(data.recipes))
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        if (err.status === 401) logout();
+        if (err.status === 401) clearSession();
         else setError(err.message);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [token, retry, logout]);
+  }, [viewerId, retry, clearSession]);
 
   const edit = (recipe) => {
     setEditing(recipe._id);
@@ -66,21 +67,17 @@ function Dashboard() {
     setBusy(true);
     setError('');
     try {
-      const data = await updateMyRecipe(
-        editing,
-        {
-          ...form,
-          totalMinutes: form.totalMinutes ? Number(form.totalMinutes) : null,
-        },
-        token
-      );
+      const data = await updateMyRecipe(editing, {
+        ...form,
+        totalMinutes: form.totalMinutes ? Number(form.totalMinutes) : null,
+      });
       setRecipes((current) =>
         current.map((recipe) => (recipe._id === editing ? data.recipe : recipe))
       );
       setEditing(null);
       setNotice('השינויים נשמרו בהצלחה');
     } catch (err) {
-      if (err.status === 401) logout();
+      if (err.status === 401) clearSession();
       else setError(err.message);
     } finally {
       setBusy(false);
@@ -91,12 +88,12 @@ function Dashboard() {
     setBusy(true);
     setError('');
     try {
-      await deleteMyRecipe(deleting._id, token);
+      await deleteMyRecipe(deleting._id);
       setRecipes((current) => current.filter((recipe) => recipe._id !== deleting._id));
       setDeleting(null);
       setNotice('המתכון נמחק');
     } catch (err) {
-      if (err.status === 401) logout();
+      if (err.status === 401) clearSession();
       else setError(err.message);
     } finally {
       setBusy(false);
@@ -127,8 +124,8 @@ function Dashboard() {
               <p>אפשר לקשר את חשבון Google עם אותה כתובת אימייל.</p>
               <GoogleSignIn
                 clientId={googleClientId}
-                token={token}
-                onSuccess={({ user }) => login(user, token)}
+                linking
+                onSuccess={({ user }) => updateUser(user)}
               />
             </>
           )}

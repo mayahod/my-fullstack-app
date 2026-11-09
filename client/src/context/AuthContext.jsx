@@ -1,109 +1,109 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { tokenExpiry, validToken } from './session';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_BASE } from '../services/config';
 
 const AuthContext = createContext(null);
+const SESSION_HINT = 'recipe-session';
 export const useAuth = () => useContext(AuthContext);
 
 export default function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => {
-    const saved = localStorage.getItem('token');
-    if (validToken(saved)) return saved;
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    return null;
-  });
-  const [checking, setChecking] = useState(() => validToken(localStorage.getItem('token')));
+  const [session, setSession] = useState(null);
+  const [checking, setChecking] = useState(() => Boolean(localStorage.getItem(SESSION_HINT)));
   const [authError, setAuthError] = useState(null);
-  const [retry, setRetry] = useState(0);
-  const isAuth = !!user && validToken(token);
+  const pending = useRef(null);
+  const user = session?.user ?? null;
+  const expiresAt = session?.expiresAt;
 
-  const login = (userObj, jwt) => {
-    setAuthError(null);
-    if (jwt !== token) setChecking(true);
-    setUser(userObj);
-    setToken(jwt);
-    localStorage.setItem('user', JSON.stringify(userObj));
-    localStorage.setItem('token', jwt);
-  };
-
-  const logout = useCallback(() => {
+  const clearSession = useCallback(() => {
+    pending.current?.abort();
+    localStorage.removeItem(SESSION_HINT);
+    setSession(null);
     setChecking(false);
     setAuthError(null);
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
   }, []);
 
-  useEffect(() => {
-    if (!token) return;
-    if (!validToken(token)) {
-      logout();
-      return;
+  const login = ({ user, expiresAt }) => {
+    if (!user?.id || !Number.isFinite(Date.parse(expiresAt))) {
+      throw new Error('לא ניתן להשלים את ההתחברות כרגע');
     }
+    pending.current?.abort();
+    localStorage.setItem(SESSION_HINT, expiresAt);
+    setSession({ user, expiresAt });
+    setChecking(false);
+    setAuthError(null);
+  };
+
+  const updateUser = (user) => setSession((current) => current && { ...current, user });
+
+  const retryAuth = useCallback(async () => {
+    pending.current?.abort();
     const controller = new AbortController();
+    pending.current = controller;
+    const { signal } = controller;
     setChecking(true);
     setAuthError(null);
-    const verify = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/users/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal,
-        });
-        if (res.status === 401) {
-          logout();
-          return;
-        }
-        if (!res.ok) throw new Error('Authentication check failed');
-        const data = await res.json();
-        if (!controller.signal.aborted) {
-          setUser(data.user);
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
-      } catch (error) {
-        if (error.name !== 'AbortError') setAuthError('לא ניתן לבדוק את ההתחברות כרגע. נסו שוב.');
-      } finally {
-        if (!controller.signal.aborted) setChecking(false);
-      }
-    };
-    verify();
-    const timeout = setTimeout(logout, Math.max(0, tokenExpiry(token) - Date.now()));
-    const onFocus = () => {
-      if (!validToken(token)) logout();
-    };
-    window.addEventListener('focus', onFocus);
-    const onStorage = (event) => {
-      if (event.key === 'token' || event.key === null) {
-        const saved = localStorage.getItem('token');
-        if (!validToken(saved)) logout();
-        else setToken(saved);
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => {
-      controller.abort();
-      clearTimeout(timeout);
-      window.removeEventListener('focus', onFocus);
-      window.removeEventListener('storage', onStorage);
-    };
-  }, [token, retry, logout]);
+    try {
+      const response = await fetch(`${API_BASE}/api/users/me`, { signal });
+      if (signal.aborted) return;
+      if (response.status === 401) return clearSession();
+      if (!response.ok) throw new Error('Authentication check failed');
+      const data = await response.json();
+      if (!signal.aborted) setSession(data);
+    } catch {
+      if (!signal.aborted) setAuthError('לא ניתן לבדוק את ההתחברות כרגע. נסו שוב.');
+    } finally {
+      if (!signal.aborted) setChecking(false);
+    }
+  }, [clearSession]);
 
-  const authHeaders = () => (token ? { Authorization: `Bearer ${token}` } : {});
+  useEffect(() => {
+    // Remove credentials stored by earlier versions. The new key is only a non-secret UI hint.
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    if (localStorage.getItem(SESSION_HINT)) retryAuth();
+    const sync = (event) => {
+      if (event.key !== SESSION_HINT && event.key !== null) return;
+      if (event.newValue) retryAuth();
+      else clearSession();
+    };
+    window.addEventListener('storage', sync);
+    return () => {
+      pending.current?.abort();
+      window.removeEventListener('storage', sync);
+    };
+  }, [clearSession, retryAuth]);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const expiry = new Date(expiresAt).getTime();
+    const timer = setTimeout(clearSession, Math.max(0, expiry - Date.now()));
+    const checkExpiry = () => {
+      if (expiry <= Date.now()) clearSession();
+    };
+    window.addEventListener('focus', checkExpiry);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('focus', checkExpiry);
+    };
+  }, [clearSession, expiresAt]);
+
+  const logout = async () => {
+    const response = await fetch(`${API_BASE}/api/users/logout`, { method: 'POST' });
+    if (!response.ok) throw new Error('לא ניתן להתנתק כרגע. נסו שוב.');
+    clearSession();
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
-        isAuth,
+        isAuth: Boolean(user),
         checking,
         authError,
-        retryAuth: () => setRetry((value) => value + 1),
+        retryAuth,
         login,
         logout,
-        authHeaders,
+        clearSession,
+        updateUser,
       }}
     >
       {children}

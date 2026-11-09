@@ -5,7 +5,8 @@ import { changeSavedRecipe, libraryRequest } from '../services/library';
 import styles from '../styles/Discovery.module.css';
 
 export default function RecipeSave({ id }) {
-  const { token } = useAuth();
+  const { user } = useAuth();
+  const viewerId = user?.id;
   const location = useLocation();
   const [collections, setCollections] = useState(null);
   const [collectionId, setCollectionId] = useState('favorites');
@@ -16,9 +17,9 @@ export default function RecipeSave({ id }) {
   const saved = selected?.recipes.some((recipe) => recipe._id === id);
 
   useEffect(() => {
-    if (!token) return;
+    if (!viewerId) return;
     const controller = new AbortController();
-    libraryRequest(token, '', { signal: controller.signal })
+    libraryRequest('', { signal: controller.signal })
       .then((data) => {
         if (!controller.signal.aborted) setCollections(data.collections);
       })
@@ -26,13 +27,13 @@ export default function RecipeSave({ id }) {
         if (!controller.signal.aborted) setError(err.message);
       });
     return () => controller.abort();
-  }, [token, attempt]);
+  }, [viewerId, attempt]);
 
   async function toggle() {
     setBusy(true);
     setError('');
     try {
-      await changeSavedRecipe(token, collectionId, id, !saved);
+      await changeSavedRecipe(collectionId, id, !saved);
       setCollections((current) =>
         current.map((list) =>
           list.id !== collectionId
@@ -52,7 +53,7 @@ export default function RecipeSave({ id }) {
     }
   }
 
-  if (!token)
+  if (!viewerId)
     return (
       <Link className={styles.textLink} to="/login" state={{ from: location }}>
         התחברות לשמירת המתכון

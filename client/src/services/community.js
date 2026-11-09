@@ -1,11 +1,10 @@
 import { API_BASE } from './config';
 
-export async function communityRequest(path, { token, signal, method = 'GET', body } = {}) {
+export async function communityRequest(path, { signal, method = 'GET', body } = {}) {
   const response = await fetch(`${API_BASE}/api/community${path}`, {
     method,
     signal,
     headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(body ? { 'Content-Type': 'application/json' } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,

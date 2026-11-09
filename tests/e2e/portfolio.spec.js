@@ -30,23 +30,24 @@ test('a visitor can create, edit and save a recipe in the demo', async ({ page }
   await expect(page.getByRole('heading', { name: 'מרק עגבניות מהיר' })).toHaveCount(0);
 });
 
-test('a signed-in visitor can find, save and plan a recipe', async ({ page, request }) => {
+test('a signed-in visitor can find, save and plan a recipe', async ({ page, request, baseURL }) => {
   const marker = randomUUID().slice(0, 8);
   const credentials = {
     email: 'e2e-' + marker + '@example.test',
     password: 'test-password-' + marker,
   };
+  const headers = { Origin: baseURL };
   await expect(
     await request.post('/api/users/register', {
+      headers,
       data: { ...credentials, firstName: 'משתמשת בדיקה' },
     })
   ).toBeOK();
-  const auth = await request.post('/api/users/login', { data: credentials });
+  const auth = await request.post('/api/users/login', { headers, data: credentials });
   await expect(auth).toBeOK();
-  const { token } = await auth.json();
   const title = 'מרק לבדיקה ' + marker;
   const result = await request.post('/api/recipes', {
-    headers: { Authorization: 'Bearer ' + token },
+    headers,
     data: {
       title,
       category: 'מרק',
@@ -65,6 +66,11 @@ test('a signed-in visitor can find, save and plan a recipe', async ({ page, requ
     await page.getByLabel('סיסמה', { exact: true }).fill(credentials.password);
     await page.getByRole('button', { name: 'התחבר', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'הפיד שלי' })).toBeVisible();
+    const cookie = (await page.context().cookies()).find(
+      ({ name }) => name === '__Host-recipe_session'
+    );
+    expect(cookie).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Lax' });
+    expect(await page.evaluate(() => localStorage.getItem('token'))).toBeNull();
     let resumeSessionCheck;
     const pendingSessionCheck = new Promise((resolve) => {
       resumeSessionCheck = resolve;
@@ -106,9 +112,10 @@ test('a signed-in visitor can find, save and plan a recipe', async ({ page, requ
     await page.getByLabel('מצרכים, מופרדים בפסיקים').fill('עגבניות');
     await page.getByRole('button', { name: 'התאמת מתכונים' }).click();
     await expect(page.getByRole('link', { name: new RegExp(title) })).toBeVisible();
+    await page.getByRole('button', { name: 'התנתקות', exact: true }).click();
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL(/\/login$/);
   } finally {
-    await request.delete('/api/recipes/' + recipe._id, {
-      headers: { Authorization: 'Bearer ' + token },
-    });
+    await request.delete('/api/recipes/' + recipe._id, { headers });
   }
 });

@@ -14,11 +14,16 @@ const displayText = (value) => value.replace(/[\u05be\u2012-\u2015]/g, '-');
 
 function RecipePage() {
   const { id } = useParams();
-  const { token } = useAuth();
+  const { user } = useAuth();
+  const viewerId = user?.id ?? '';
   const [loadedRecipe, setRecipe] = useState(null);
   const [error, setError] = useState(null);
   const featured = featuredRecipes.find((entry) => entry._id === id);
-  const recipe = featured ?? (loadedRecipe?._id === id ? loadedRecipe : null);
+  const recipe =
+    featured ??
+    (loadedRecipe?.recipe._id === id && loadedRecipe.viewerId === viewerId
+      ? loadedRecipe.recipe
+      : null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -27,7 +32,6 @@ function RecipePage() {
     if (featured) return;
     fetch(`${API_BASE}/api/recipes/${id}`, {
       signal: controller.signal,
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((res) => {
         if (!res.ok)
@@ -37,13 +41,13 @@ function RecipePage() {
         return res.json();
       })
       .then((data) => {
-        setRecipe(data.recipe);
+        if (!controller.signal.aborted) setRecipe({ recipe: data.recipe, viewerId });
       })
       .catch((err) => {
         if (err.name !== 'AbortError') setError(err.message);
       });
     return () => controller.abort();
-  }, [id, token, featured]);
+  }, [id, viewerId, featured]);
 
   return (
     <div className={styles.container}>
@@ -77,7 +81,7 @@ function RecipePage() {
                 <Link to={`/people/${recipe.createdBy}`}>לפרופיל היוצר</Link>
               )}
             </div>
-            {!featured && <RecipeSave key={id + ':' + (token || '')} id={id} />}
+            {!featured && <RecipeSave key={id + ':' + viewerId} id={id} />}
           </header>
           {recipe.imageUrl && (
             <RecipeImage src={recipe.imageUrl} alt={recipe.title} className={styles.image} eager />
@@ -98,7 +102,7 @@ function RecipePage() {
               </ol>
             </section>
           </div>
-          {recipe.isPublic && <RecipeDiscussion key={`${id}:${token ?? ''}`} id={id} />}
+          {recipe.isPublic && <RecipeDiscussion key={`${id}:${viewerId}`} id={id} />}
         </article>
       ) : null}
     </div>

@@ -6,7 +6,7 @@ import { communityRequest } from '../services/community';
 import styles from '../styles/Discovery.module.css';
 
 export default function PostLike({ id, liked, likeCount }) {
-  const { token } = useAuth();
+  const { isAuth } = useAuth();
   const location = useLocation();
   const [reaction, setReaction] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -20,7 +20,6 @@ export default function PostLike({ id, liked, likeCount }) {
       setReaction(
         await communityRequest(`/posts/${id}/like`, {
           method: current.liked ? 'DELETE' : 'PUT',
-          token,
         })
       );
     } catch (err) {
@@ -32,7 +31,7 @@ export default function PostLike({ id, liked, likeCount }) {
 
   return (
     <>
-      {token ? (
+      {isAuth ? (
         <button
           type="button"
           className={styles.postAction}

@@ -74,7 +74,8 @@ function WeeklyPlan({ userId, collections }) {
 }
 
 export default function Library() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  const viewerId = user?.id;
   const [collections, setCollections] = useState(null);
   const [active, setActive] = useState('favorites');
   const [name, setName] = useState('');
@@ -85,7 +86,7 @@ export default function Library() {
 
   useEffect(() => {
     const controller = new AbortController();
-    libraryRequest(token, '', { signal: controller.signal })
+    libraryRequest('', { signal: controller.signal })
       .then((data) => {
         if (!controller.signal.aborted) setCollections(data.collections);
       })
@@ -93,12 +94,12 @@ export default function Library() {
         if (!controller.signal.aborted) setError(err.message);
       });
     return () => controller.abort();
-  }, [token, attempt]);
+  }, [viewerId, attempt]);
 
   async function create(event) {
     event.preventDefault();
     await run(async () => {
-      const added = await libraryRequest(token, '/collections', { method: 'PUT', body: { name } });
+      const added = await libraryRequest('/collections', { method: 'PUT', body: { name } });
       setCollections((current) =>
         current.some(({ id }) => id === added.id)
           ? current
@@ -124,7 +125,7 @@ export default function Library() {
 
   function removeRecipe(recipeId) {
     return run(async () => {
-      await changeSavedRecipe(token, active, recipeId, false);
+      await changeSavedRecipe(active, recipeId, false);
       setCollections((current) =>
         current.map((collection) =>
           collection.id !== active
@@ -141,7 +142,7 @@ export default function Library() {
   function removeCollection() {
     if (!window.confirm('למחוק את האוסף? המתכונים עצמם יישארו באתר.')) return;
     return run(async () => {
-      await libraryRequest(token, '/collections/' + active, { method: 'DELETE' });
+      await libraryRequest('/collections/' + active, { method: 'DELETE' });
       setCollections((current) => current.filter(({ id }) => id !== active));
       setActive('favorites');
     });

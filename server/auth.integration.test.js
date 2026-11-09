@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import users from './routes/userRoutes.js';
 import recipes from './routes/recipes.js';
@@ -14,6 +13,10 @@ import library from './routes/library.js';
 import Collection from './models/Collection.js';
 import User from './models/User.js';
 import Recipe from './models/Recipe.js';
+import Session from './models/Session.js';
+import LoginAttempt from './models/LoginAttempt.js';
+import { loginBucketKey } from './loginLimit.js';
+import { requireTrustedOrigin } from './requestOrigin.js';
 
 dotenv.config();
 
@@ -26,7 +29,10 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
   const password = `Test-${randomUUID()}`;
   const newPassword = `New-${randomUUID()}`;
   const app = express();
+  const origin = 'https://recipes.example.test';
+  app.set('trust proxy', 1);
   app.use(express.json());
+  app.use('/api', requireTrustedOrigin([origin]));
   app.use('/api/users', users);
   app.use('/api/recipes', recipes);
   app.use('/api/community', community);
@@ -35,17 +41,27 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
-  const request = async (path, method = 'GET', body, token) => {
+  const request = async (path, method = 'GET', body, token, overrides = {}) => {
     const response = await fetch(`${base}${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Origin: origin,
+        'X-Forwarded-For': '192.0.2.1',
+        ...(token ? { Cookie: token } : {}),
+        ...overrides,
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       signal: AbortSignal.timeout(15000),
     });
-    return { status: response.status, body: await response.json() };
+    const setCookie = response.headers.get('Set-Cookie');
+    return {
+      status: response.status,
+      body: response.status === 204 ? null : await response.json(),
+      cookie: setCookie?.split(';')[0],
+      setCookie,
+      retryAfter: response.headers.get('Retry-After'),
+    };
   };
   let token, userId, recipeId;
   try {
@@ -113,8 +129,13 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
           password,
         });
         assert.equal(result.status, 200);
-        token = result.body.token;
-        assert.equal(jwt.verify(token, process.env.JWT_SECRET).id, userId);
+        token = result.cookie;
+        assert.equal(result.body.token, undefined);
+        assert.match(result.setCookie, /; HttpOnly/);
+        assert.match(result.setCookie, /; SameSite=Lax/);
+        const secret = token.split('=')[1];
+        assert.equal(await Session.exists({ _id: secret }), null);
+        assert.ok(await Session.exists({ _id: createHash('sha256').update(secret).digest('hex') }));
         assert.equal(result.body.user.firstName, 'בדיקה');
         const current = await request('/api/users/me', 'GET', undefined, token);
         assert.equal(current.status, 200);
@@ -123,16 +144,91 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
       }
     );
     await t.test('rejects missing, forged, expired and deleted-user sessions', async () => {
-      for (const badToken of [
-        undefined,
-        'invalid',
-        jwt.sign({ id: userId }, 'wrong-secret'),
-        jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: -1 }),
-        jwt.sign({ id: new mongoose.Types.ObjectId().toString() }, process.env.JWT_SECRET),
-      ]) {
-        assert.equal((await request('/api/users/me', 'GET', undefined, badToken)).status, 401);
+      const secret = randomBytes(32).toString('base64url');
+      const _id = createHash('sha256').update(secret).digest('hex');
+      const fake = token.split('=')[0] + '=' + secret;
+      assert.equal((await request('/api/users/me')).status, 401);
+      assert.equal((await request('/api/users/me', 'GET', undefined, fake)).status, 401);
+      await Session.create({ _id, userId, passwordVersion: 0, expiresAt: new Date(0) });
+      try {
+        assert.equal((await request('/api/users/me', 'GET', undefined, fake)).status, 401);
+        await Session.updateOne(
+          { _id },
+          { userId: new mongoose.Types.ObjectId(), expiresAt: new Date(Date.now() + 60_000) }
+        );
+        assert.equal((await request('/api/users/me', 'GET', undefined, fake)).status, 401);
+      } finally {
+        await Session.deleteOne({ _id });
       }
     });
+    await t.test('blocks cross-origin changes and invalidates the cookie at logout', async () => {
+      const login = await request('/api/users/login', 'POST', { email, password });
+      assert.equal(login.status, 200);
+      for (const untrusted of ['https://attacker.example.test', 'null', '']) {
+        const overrides = { Origin: untrusted };
+        assert.equal(
+          (await request('/api/users/login', 'POST', { email, password }, null, overrides)).status,
+          403
+        );
+        assert.equal(
+          (await request('/api/users/logout', 'POST', undefined, login.cookie, overrides)).status,
+          403
+        );
+        assert.equal(
+          (await request('/api/recipes', 'POST', {}, login.cookie, overrides)).status,
+          403
+        );
+      }
+      const logout = await request('/api/users/logout', 'POST', undefined, login.cookie);
+      assert.equal(logout.status, 204);
+      assert.match(logout.setCookie, /Expires=Thu, 01 Jan 1970/);
+      assert.equal((await request('/api/users/me', 'GET', undefined, login.cookie)).status, 401);
+      assert.equal((await request('/api/users/me', 'GET', undefined, token)).status, 200);
+    });
+    await t.test(
+      'shares account cooldowns across IPs and limits attempts from one IP',
+      async () => {
+        const unknown = 'throttle-' + randomUUID() + '@example.test';
+        const accountBucket = loginBucketKey('email', unknown);
+        const ipBucket = loginBucketKey('ip', '192.0.2.100');
+        const login = (address, ip) =>
+          request('/api/users/login', 'POST', { email: address, password }, null, {
+            'X-Forwarded-For': ip,
+          });
+        try {
+          for (const ip of ['192.0.2.2', '192.0.2.3', '192.0.2.4']) {
+            assert.equal((await login(unknown, ip)).status, 401);
+          }
+          const results = await Promise.all([
+            login(unknown, '192.0.2.5'),
+            login(unknown.toUpperCase(), '192.0.2.6'),
+            login(unknown, '192.0.2.7'),
+          ]);
+          assert.deepEqual(results.map(({ status }) => status).sort(), [401, 429, 429]);
+          assert.ok(
+            results
+              .filter(({ status }) => status === 429)
+              .every(({ retryAfter }) => Number(retryAfter) > 0)
+          );
+          await LoginAttempt.updateOne({ _id: accountBucket }, { expiresAt: new Date(0) });
+          assert.equal((await login(unknown, '192.0.2.8')).status, 401);
+
+          await LoginAttempt.create({
+            _id: ipBucket,
+            count: 30,
+            nextAllowedAt: new Date(0),
+            expiresAt: new Date(Date.now() + 60_000),
+          });
+          assert.equal((await login(email, '192.0.2.100')).status, 429);
+          assert.equal((await login(secondEmail, '192.0.2.100')).status, 429);
+        } finally {
+          const ips = [2, 3, 4, 5, 6, 7, 8, 100].map((value) =>
+            loginBucketKey('ip', '192.0.2.' + value)
+          );
+          await LoginAttempt.deleteMany({ _id: { $in: [accountBucket, ...ips] } });
+        }
+      }
+    );
     await t.test('requires login for writing recipes and records ownership', async () => {
       const payload = {
         title: `Auth test ${email}`,
@@ -167,7 +263,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
         password,
       });
       const other = await request('/api/users/login', 'POST', { email: secondEmail, password });
-      const otherRecipes = await request('/api/recipes/mine', 'GET', undefined, other.body.token);
+      const otherRecipes = await request('/api/recipes/mine', 'GET', undefined, other.cookie);
       assert.deepEqual(otherRecipes.body.recipes, []);
       assert.equal(
         (
@@ -175,13 +271,13 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
             `/api/recipes/${recipeId}`,
             'PATCH',
             { title: 'unauthorized' },
-            other.body.token
+            other.cookie
           )
         ).status,
         404
       );
       assert.equal(
-        (await request(`/api/recipes/${recipeId}`, 'DELETE', undefined, other.body.token)).status,
+        (await request(`/api/recipes/${recipeId}`, 'DELETE', undefined, other.cookie)).status,
         404
       );
       assert.ok(await Recipe.exists({ _id: recipeId }));
@@ -224,11 +320,15 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
       assert.equal(created.body.recipe.isPublic, false);
       assert.equal(created.body.recipe.imageUrl, '');
       const other = await request('/api/users/login', 'POST', { email: secondEmail, password });
-      const otherToken = other.body.token;
+      const otherToken = other.cookie;
       for (const viewer of [undefined, otherToken]) {
         assert.equal((await request(`/api/recipes/${id}`, 'GET', undefined, viewer)).status, 404);
       }
-      assert.equal((await request(`/api/recipes/${id}`, 'GET', undefined, 'invalid')).status, 401);
+      const forgedCookie = token.split('=')[0] + '=' + randomBytes(32).toString('base64url');
+      assert.equal(
+        (await request(`/api/recipes/${id}`, 'GET', undefined, forgedCookie)).status,
+        404
+      );
       assert.equal((await request(`/api/recipes/${id}`, 'GET', undefined, token)).status, 200);
       assert.ok(
         (await request('/api/recipes/mine', 'GET', undefined, token)).body.recipes.some(
@@ -293,7 +393,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
     await t.test('catalog filters and library membership respect recipe visibility', async () => {
       const second = await request('/api/users/login', 'POST', { email: secondEmail, password });
       assert.equal(second.status, 200);
-      const other = second.body.token;
+      const other = second.cookie;
       const marker = randomUUID().slice(0, 12);
       const recipePayload = {
         title: 'Catalog ' + marker,
@@ -359,7 +459,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
 
     await t.test('following is idempotent and feeds contain only public recipes', async () => {
       const other = await request('/api/users/login', 'POST', { email: secondEmail, password });
-      const follower = other.body.token;
+      const follower = other.cookie;
       const payload = {
         title: 'Community recipe',
         category: 'סלט',
@@ -484,7 +584,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
       'public usernames are searchable, unique and editable only by the account owner',
       async () => {
         const other = await request('/api/users/login', 'POST', { email: secondEmail, password });
-        const otherToken = other.body.token;
+        const otherToken = other.cookie;
         const handle = 'cook_' + randomUUID().slice(0, 8);
         const update = '/api/community/profile';
         assert.equal((await request(update, 'PATCH', { username: handle })).status, 401);
@@ -681,7 +781,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
           const login = await request('/api/users/login', 'POST', { email, password: newPassword });
           assert.equal(login.status, 200);
           assert.equal(
-            (await request('/api/users/me', 'GET', undefined, login.body.token)).status,
+            (await request('/api/users/me', 'GET', undefined, login.cookie)).status,
             200
           );
           const cleared = await User.findById(userId).select('+resetTokenHash');
@@ -745,7 +845,7 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
             password: newPassword,
           });
           assert.equal(passwordLogin.status, 200);
-          const session = passwordLogin.body.token;
+          const session = passwordLogin.cookie;
           assert.deepEqual((await request('/api/users/google/config')).body, {
             clientId: process.env.GOOGLE_CLIENT_ID,
           });
@@ -783,9 +883,19 @@ test('registration, login, sessions and recipe permissions against MongoDB', asy
     );
   } finally {
     // Remove only records created by this run, including on assertion failure.
-    const testUsers = await User.find({ email: { $in: [email, secondEmail] } }).select('_id');
-    await Collection.deleteMany({ owner: { $in: testUsers.map((user) => user._id) } });
-    await Recipe.deleteMany({ createdBy: { $in: testUsers.map((user) => user._id) } });
+    const accounts = await User.find({ email: { $in: [email, secondEmail, googleEmail] } }).select(
+      '_id'
+    );
+    const accountIds = accounts.map(({ _id }) => _id);
+    await Collection.deleteMany({ owner: { $in: accountIds } });
+    await Recipe.deleteMany({ createdBy: { $in: accountIds } });
+    await Session.deleteMany({ userId: { $in: accountIds } });
+    const bucketIds = [email, secondEmail, googleEmail].map((address) =>
+      loginBucketKey('email', address)
+    );
+    await LoginAttempt.deleteMany({
+      _id: { $in: [...bucketIds, loginBucketKey('ip', '192.0.2.1')] },
+    });
     await User.deleteMany({ email: { $in: [email, secondEmail, googleEmail] } });
     await new Promise((resolve) => server.close(resolve));
     await mongoose.disconnect();

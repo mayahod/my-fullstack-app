@@ -2,12 +2,10 @@ import styles from './AddRecipe.module.css';
 import { addRecipe } from '../../services/recipes';
 import { useState } from 'react';
 import { FaCheckCircle, FaTimesCircle, FaTimes } from 'react-icons/fa';
-import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { difficulties } from '../../data/recipeOptions';
 
 const AddRecipe = () => {
-  const { token } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,10 +34,10 @@ const AddRecipe = () => {
     if (saving) return;
     setSaving(true);
     try {
-      await addRecipe(
-        { ...formData, totalMinutes: formData.totalMinutes ? Number(formData.totalMinutes) : null },
-        token
-      );
+      await addRecipe({
+        ...formData,
+        totalMinutes: formData.totalMinutes ? Number(formData.totalMinutes) : null,
+      });
       navigate('/dashboard', { state: { notice: 'המתכון נוסף בהצלחה' } });
     } catch (error) {
       console.error('Error adding recipe:', error);

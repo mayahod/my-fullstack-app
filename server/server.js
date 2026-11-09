@@ -10,12 +10,22 @@ import communityRoutes from './routes/community.js';
 import pantryRoutes from './routes/pantry.js';
 import libraryRoutes from './routes/library.js';
 import { publicFrontend } from './publicFrontend.js';
+import { requireTrustedOrigin } from './requestOrigin.js';
+import Session from './models/Session.js';
+import LoginAttempt from './models/LoginAttempt.js';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(directory, '.env') });
 
 const PORT = process.env.PORT || 5001;
 const netlifyOrigin = publicFrontend();
+const origins = [
+  process.env.APP_URL,
+  process.env.RENDER_EXTERNAL_URL,
+  process.env.CLIENT_URL,
+  netlifyOrigin,
+  ...(!process.env.RENDER ? ['http://localhost:3002', 'http://127.0.0.1:3002'] : []),
+].filter(Boolean);
 const app = express();
 app.disable('x-powered-by');
 if (process.env.RENDER) app.set('trust proxy', 1);
@@ -30,14 +40,10 @@ app.use((req, res, next) => {
 });
 app.use(
   cors({
-    origin: [
-      process.env.APP_URL,
-      process.env.RENDER_EXTERNAL_URL,
-      process.env.CLIENT_URL,
-      netlifyOrigin,
-    ].filter(Boolean),
+    origin: origins,
   })
 );
+app.use('/api', requireTrustedOrigin(origins));
 
 app.use((req, res, next) => {
   console.log(req.path, req.method);
@@ -76,6 +82,7 @@ app.use((error, req, res, next) => {
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
+  .then(() => Promise.all([Session.init(), LoginAttempt.init()]))
   .then(() => {
     app.listen(PORT, '0.0.0.0', () => {
       console.log('connected to mongoDB & listening on port', PORT);

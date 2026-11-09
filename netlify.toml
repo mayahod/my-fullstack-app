@@ -4,7 +4,13 @@
 
 [build.environment]
   NODE_VERSION = "22"
-  VITE_API_URL = "https://my-fullstack-app-tf48.onrender.com"
+  VITE_API_URL = ""
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://my-fullstack-app-tf48.onrender.com/api/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
